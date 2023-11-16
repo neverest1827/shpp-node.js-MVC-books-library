@@ -1,0 +1,12 @@
+.admin-panel__inner {
+
+}
+
+.textarea.form-control{
+    height: 80px;
+    resize: none;
+}
+
+th, td {
+    text-align: center;
+}

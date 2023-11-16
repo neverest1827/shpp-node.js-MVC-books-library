@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель</title>
+    <link rel="stylesheet" href="/admin-panel/style/reset.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/admin-panel/style/style.css">
+</head>
+<body>
+
+<header class="bg-dark text-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6"><h2>Бібліотека++</h2></div>
+            <div class="col-md-6 text-right pt-2">
+                <a href="#" class="text-white">Вихід</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<section class="admin-panel container mt-4">
+    <div class="admin-panel-inner d-flex justify-content-between">
+        <div class="admin-panel__table col-md-6">
+            <div class="col-md-12">
+                <h2>Таблиця</h2>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Назва книги</th>
+                        <th>Автори</th>
+                        <th>Рік</th>
+                        <th>Дія</th>
+                        <th>Кліків</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>Книга 1</td>
+                        <td>Автор 1</td>
+                        <td>2023</td>
+                        <td><button class="btn btn-danger">Видалити</button></td>
+                        <td>10</td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <!-- Пагинация -->
+                <ul class="pagination">
+                    <li class="page-item"><a class="page-link" href="#">«</a></li>
+                    <li class="page-item"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item"><a class="page-link" href="#">»</a></li>
+                </ul>
+            </div>
+        </div>
+        <!-- Второй блок -->
+        <div class="admin-panel__form row ml-4 сol-md-12">
+            <div class="col-md-12">
+                <h2>Додати нову книгу</h2>
+                <form>
+                    <div class="form__inner row">
+                        <div class="form-group mr-4">
+                            <input type="text" class="form-control mb-3" id="bookTitle" placeholder="Назва книги">
+                            <input type="text" class="form-control mb-3" id="bookYear" placeholder="Рік видання">
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="customFile">
+                                <label class="custom-file-label" for="customFile">Виберіть зображеня</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control mb-3" placeholder="Автор1">
+                            <input type="text" class="form-control mb-3" placeholder="Автор2">
+                            <input type="text" class="form-control mb-3" placeholder="Автор3">
+                            <textarea class="textarea form-control" ></textarea>
+                        </div>
+                    </div>
+                    <!-- Добавьте еще инпуты по аналогии -->
+                    <button type="submit" class="btn btn-success">Додати</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>
