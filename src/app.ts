@@ -17,11 +17,15 @@ app.get('/', (req: Request, res: Response) => {
     res.render(path.join('books-page.ejs'))
 })
 
+app.get('/admin', (req: Request, res: Response) => {
+    res.render(path.join('books-page.ejs'))
+})
+
 app.get('/api/v1/', (req: Request, res: Response) => {
 
 })
 app.get('/admin/api/v1/', (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../static', './admin-panel/index.html'))
+    res.sendFile(path.join(__dirname, '../static', './admin-panel/admin_page.ejs'))
 })
 
 app.listen(port, () => {
