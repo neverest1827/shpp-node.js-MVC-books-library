@@ -25,7 +25,7 @@ app.get('/api/v1/', (req: Request, res: Response) => {
 
 })
 app.get('/admin/api/v1/', (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../static', './admin-panel/admin_page.ejs'))
+    res.sendFile(path.join(__dirname, '../static', './admin-panel/admin-page.ejs'))
 })
 
 app.listen(port, () => {
