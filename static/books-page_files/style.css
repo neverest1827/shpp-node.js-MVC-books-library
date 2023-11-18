@@ -147,19 +147,20 @@ html, body {
 .sidebar2 {
   text-align: center; }
   .sidebar2 .nav2 .filterBlock {
-    border-bottom: 1px solid rgba(34, 36, 38, 0.15);
+    font-size: 0;
     padding: 10px; }
     .sidebar2 .nav2 .filterBlock .active {
       border-bottom: 1px solid #27ae60;
       padding-bottom: 10px; }
     .sidebar2 .nav2 .filterBlock a {
+      border-bottom: 1px solid rgba(34, 36, 38, 0.15);
       padding-left: 1%;
       padding-right: 1%;
       padding-bottom: 10px;
       line-height: 80px;
       color: #2c3e50;
       text-transform: uppercase;
-      font-size: 81%;
+      font-size: calc(var(--body-font-size) * 0.81);
       white-space: nowrap; }
       .sidebar2 .nav2 .filterBlock a:hover {
         font-weight: bold; }

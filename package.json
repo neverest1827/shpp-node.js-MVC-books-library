@@ -9,6 +9,7 @@
     "build": "rd /s /q dist && tsc",
     "copy": "robocopy src dist /s /e /xf *.ts /xd types > nul",
     "start": "node dist/app.js",
+    "bc": "npm run build && npm run copy",
     "bs": "npm run build && npm run start"
   },
   "author": "Vitalii Fetisov",

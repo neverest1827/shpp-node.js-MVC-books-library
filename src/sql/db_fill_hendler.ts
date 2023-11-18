@@ -4,20 +4,36 @@ import {TypeBooks} from "types";
 
 const data: string = fs.readFileSync('../../data.json', 'utf-8');
 const config: string = fs.readFileSync('../../config.json', 'utf-8');
+const sql_script: string = fs.readFileSync('./fill_table.sql', "utf-8");
 const books: TypeBooks[] = JSON.parse(data);
 const options = JSON.parse(config)
 
-const connection: Connection = mysql.createConnection(options)
-for (const book of books) {
-    connection.query(
-        'INSERT INTO library (name, author, description, year, clicks, path, pages, stars) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [book.name, book.author, book.description, book.year, book.clicks, book.path, book.pages, book.stars],
-        (error: mysql.QueryError | null, results, fields: mysql.FieldPacket[]) => {
-            if (error) {
-                throw new Error(`${error}`)
-            }
-        }
-    );
+function generateRandomDatetime(): string {
+    const randomDate: Date = new Date(Math.floor(Math.random() * Date.now()));
+    return randomDate.toISOString().slice(0, 19).replace("T", " ");
 }
-console.log("success")
-connection.end()
+
+const connection: Connection = mysql.createConnection(options)
+try {
+    for (const book of books) {
+        connection.query(
+            sql_script,
+            [
+                book.name,
+                book.author,
+                book.description,
+                book.year,
+                book.pages,
+                book.stars,
+                generateRandomDatetime(),
+                book.path,
+                book.clicks
+            ]
+        );
+    }
+    console.log("success")
+} catch (err) {
+    console.log(err)
+} finally {
+    connection.end();
+}
