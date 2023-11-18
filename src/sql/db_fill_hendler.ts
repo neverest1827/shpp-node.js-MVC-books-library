@@ -1,5 +1,5 @@
 import fs from "fs"
-import mysql from "mysql2";
+import mysql, {Connection} from "mysql2";
 import {TypeBooks} from "types";
 
 const data: string = fs.readFileSync('../../data.json', 'utf-8');
@@ -7,7 +7,7 @@ const config: string = fs.readFileSync('../../config.json', 'utf-8');
 const books: TypeBooks[] = JSON.parse(data);
 const options = JSON.parse(config)
 
-const connection = mysql.createConnection(options)
+const connection: Connection = mysql.createConnection(options)
 for (const book of books) {
     connection.query(
         'INSERT INTO library (name, author, description, year, clicks, path, pages, stars) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',

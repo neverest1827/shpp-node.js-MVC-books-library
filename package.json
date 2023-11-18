@@ -4,10 +4,11 @@
   "description": "",
   "type": "module",
   "strict": true,
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "build": "rd /s /q dist && tsc",
-    "start": "node dist/index.js",
+    "copy": "robocopy src dist /s /e /xf *.ts /xd types > nul",
+    "start": "node dist/app.js",
     "bs": "npm run build && npm run start"
   },
   "author": "Vitalii Fetisov",
