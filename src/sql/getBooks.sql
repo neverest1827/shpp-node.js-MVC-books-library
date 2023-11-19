@@ -1,1 +1,0 @@
-SELECT id, name, author, path FROM library;

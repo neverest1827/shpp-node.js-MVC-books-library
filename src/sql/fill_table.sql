@@ -1,2 +1,2 @@
-INSERT INTO library (name, author, description, year, pages, stars, date, path, clicks)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO library (title, author, description, year, pages, stars, date, clicks)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
