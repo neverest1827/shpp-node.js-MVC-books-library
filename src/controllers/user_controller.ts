@@ -20,7 +20,6 @@ export async function filterBooks(req: Request, res: Response): Promise<void> {
     const {filter, offset, limit} = req.query as TypeQuery;
     const books: TypeBooks[] | null = await User.getBooks(filter, offset, limit);
     if (books) {
-        res.render('books-page.ejs');
         res.status(200).send({
             "success": true,
             "data": {
