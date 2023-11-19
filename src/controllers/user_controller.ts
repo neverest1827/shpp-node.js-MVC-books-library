@@ -1,21 +1,39 @@
-import express, { Request, Response, Router } from "express";
-import * as User from "../models/user.js"
-import {TypeBooks} from "types";
+import {Request, Response} from "express";
+import {TypeBooks, TypeQuery} from "types";
+import * as User from "../models/user.js";
 
-export const user_router: Router = express.Router();
-
-user_router.get('/',  async (req: Request, res: Response) => {
-    const query = req.query
-    if (typeof query === "object" && query.length) console.log(query)
-    const books: TypeBooks[] | null = await User.getBooks()
-    if (books) {
-        res.status(200).render('books-page.ejs',{books})
-    } else {
-        res.status(500).render('error-page.ejs');
+export async function getBooks(req: Request, res: Response): Promise<void>{
+    console.log('/')
+    try {
+        res.status(200).render('books-page.ejs')
+    } catch (err) {
+        res.status(404).send({
+            "success": false,
+            "msg": "file not found"
+        });
     }
-})
+}
 
-user_router.get('/api/v1/', (req: Request, res: Response) => {
-    const query = req.query
-    if (typeof query === "object" && query.length) console.log(query)
-})
+export async function filterBooks(req: Request, res: Response): Promise<void> {
+    console.log(req.query)
+    console.log('api')
+    const {filter, offset, limit} = req.query as TypeQuery;
+    const books: TypeBooks[] | null = await User.getBooks(filter, offset, limit);
+    if (books) {
+        res.render('books-page.ejs');
+        res.status(200).send({
+            "success": true,
+            "data": {
+                "books": books,
+                "total": {
+                    "amount": +limit
+                }
+            }
+        });
+    } else {
+        res.status(500).send({
+            "success": false,
+            "msg": "Server error"
+        });
+    }
+}
