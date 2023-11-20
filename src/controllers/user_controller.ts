@@ -2,7 +2,7 @@ import {Request, Response} from "express";
 import {TypeBooks, TypeQuery, TypeResult} from "types";
 import * as User from "../models/user.js";
 
-export async function getBooks(req: Request, res: Response): Promise<void>{
+export async function getIndex(req: Request, res: Response): Promise<void>{
     try {
         res.status(200).render('books-page.ejs')
     } catch (err) {
@@ -13,7 +13,7 @@ export async function getBooks(req: Request, res: Response): Promise<void>{
     }
 }
 
-export async function getFiltereBooks(req: Request, res: Response): Promise<void> {
+export async function getFilteredBooks(req: Request, res: Response): Promise<void> {
     const {filter, offset, limit} = req.query as TypeQuery;
     const result: TypeResult = await User.getBooks(filter, offset, limit);
     if (result.success) {

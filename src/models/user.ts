@@ -10,7 +10,7 @@ export async function getBooks(filter: string, offset: string | number, limit: s
     try {
         await connection.connect()
         const sql_command: string = await getSqlCommand(filter)
-        const [books , field] = await connection.execute(sql_command);
+        const [books ] = await connection.execute(sql_command);
 
         return {
             success: true,
