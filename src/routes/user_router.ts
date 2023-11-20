@@ -4,4 +4,7 @@ import * as UserController from "../controllers/user_controller.js"
 
 user_router.get('/',  (req:Request, res: Response) =>  UserController.getBooks(req, res));
 
-user_router.get('/api/v1/books', (req: Request, res: Response) => UserController.filterBooks(req, res));
+user_router.get(
+    '/api/v1/books',
+    (req: Request, res: Response) => UserController.getFiltereBooks(req, res)
+);
