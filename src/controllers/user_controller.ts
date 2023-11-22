@@ -1,5 +1,5 @@
-import {Request, Response} from "express";
-import {TypeBooks, TypeQuery, TypeResult} from "types";
+import { Request, Response } from "express";
+import { TypeQuery, TypeResult } from "types";
 import * as User from "../models/user.js";
 
 export async function getIndex(req: Request, res: Response): Promise<void>{
@@ -14,8 +14,8 @@ export async function getIndex(req: Request, res: Response): Promise<void>{
 }
 
 export async function getFilteredBooks(req: Request, res: Response): Promise<void> {
-    const {filter, offset, limit} = req.query as TypeQuery;
-    const result: TypeResult = await User.getBooks(filter, offset, limit);
+    const {filter, limit, offset} = req.query as TypeQuery;
+    const result: TypeResult = await User.getBooks(filter, limit, offset);
     if (result.success) {
         res.status(200).send(result);
     } else {
