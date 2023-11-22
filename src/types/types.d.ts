@@ -9,9 +9,12 @@ export type TypeQuery = {
 }
 
 
-type TypeData = {
-    books: TypeBooks[],
+type TypeTotal = {
     amount: number
+}
+
+type TypeData = {
+    [key: string] : TypeBooks[] | TypeTotal | string | number
 }
 
 type TypeResultSuccess = {
