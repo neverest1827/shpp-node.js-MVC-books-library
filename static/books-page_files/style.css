@@ -411,6 +411,13 @@ html, body {
   text-align: center;
   display: none; }
 
+/*------------------------------- pagination  --------------------------*/
+.pagination__link{
+  display: none;
+}
+.pagination__link.pagination__link--visible{
+  display: block;
+}
 /*------------------------------- .footer-wrapper  --------------------------*/
 .footer-wrapper {
   position: absolute;
