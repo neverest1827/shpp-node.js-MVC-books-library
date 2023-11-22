@@ -91,7 +91,7 @@ html, body {
           .header-wrapper .navbar .main-menu .navbar-form .mSearchAutoComplete .eAutoComplete_itemMore a {
             margin: 0;
             display: block !important;
-            text-align: right;
+            text-align: center;
             line-height: 0;
             padding: 10px 0; }
             .header-wrapper .navbar .main-menu .navbar-form .mSearchAutoComplete .eAutoComplete_itemMore a span {
@@ -142,7 +142,6 @@ html, body {
               max-height: 50px; }
           .header-wrapper .navbar .main-menu .navbar-form .mSearchAutoComplete .eAutoComplete_itemList:hover {
             opacity: 1; }
-
 /*----------------------------------- .sidebar2  ----------------------------*/
 .sidebar2 {
   text-align: center; }
