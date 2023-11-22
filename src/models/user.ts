@@ -3,20 +3,25 @@ import {TypeBooks, TypeResult} from "types";
 import fs from "fs/promises";
 
 const config: string = await fs.readFile('./config.json', 'utf-8');
-const default_offset: number = 20;
-export async function getBooks(filter: string, offset: string | number, limit: string): Promise<TypeResult> {
-    offset = offset ? +offset : default_offset;
+const default_offset: string = '0';
+export async function getBooks(filter: string, limit: string, offset: string): Promise<TypeResult> {
+    offset = offset ? offset : default_offset;
+
     const connection: Connection = await mysql.createConnection(JSON.parse(config));
     try {
         await connection.connect()
         const sql_command: string = await getSqlCommand(filter)
-        const [books ] = await connection.execute(sql_command);
-
+        const [books, fields ] = await connection.execute(sql_command, [limit, offset]);
+        const total: number = +(books as TypeBooks[])[0].total
         return {
             success: true,
             data: {
-                books: (books as TypeBooks[]).splice(0, offset),
-                amount: offset
+                books: books as TypeBooks[],
+                filter: filter,
+                offset: offset,
+                total: {
+                    amount: total,
+                }
             }
         }
 
