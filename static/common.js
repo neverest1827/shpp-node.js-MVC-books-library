@@ -184,7 +184,7 @@ var view = {
         var n = 0;
         for (var i in books) {
             n++;
-            if (i <= limitImetsInSearch) {
+            if (i < limitImetsInSearch) {
                 contentHTML += view.addMiniItemSearch(pathUrl, books[i]);
                 content.attr('size', n);
             }

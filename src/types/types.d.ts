@@ -2,11 +2,18 @@ export type TypeBooks = {
     [key: string]: string | number;
 }
 
-export type TypeQuery = {
+
+type TypeQueryFilter = {
     filter: string;
     offset: string;
     limit: string;
 }
+
+type TypeQuerySearch = {
+    search: string
+}
+
+export type TypeQuery = TypeQueryFilter | TypeQuerySearch
 
 
 type TypeTotal = {
