@@ -46,6 +46,14 @@ var view = {
         content.html(contentHTML);
         $('.blockI').matchHeight(); // Aligns all the height of the book
     },
+    removeBookItem: function (book){
+        $(`[data-book-id="${book.id}"]`).remove()
+    },
+    removeBooksItems: function (books){
+        for (let i in books) {
+            view.removeBookItem(books[i]);
+        }
+    },
     showNot_found: function(searchText, pathUrl) {
         var contentNotFound = $('#not_found').html()
             .replace(/{searchText}/g, searchText);
@@ -239,8 +247,8 @@ $(function() {
 });
 
 var global = {
-    items_limit_on_page_load: 24,
-    number_of_items_onscroll: 6,
+    items_limit_on_page_load: 20,
+    number_of_items_onscroll: 10,
     filter: 'new'
 };
 
