@@ -16,6 +16,35 @@
                             <div class="form-group">
                                 <input id="search" type="text" placeholder="Найти книгу" class="form-control">
                                 <div class="loader"><img src="./books-page/books-page_files/loading.gif"></div>
+                                <script id="miniItem" type="text/template">
+                                    <div class="eAutoComplete_itemList">
+                                        <a class="miniItem__link" href="{path}/books/{id}" >
+                                            <img class="col-my-2" src="{path}/books-images/{id}.jpg" alt="book image"></img>
+                                            <div class="infoBook col-my-10">
+                                                <div class="title">{title}</div>
+                                                <div>{author}</div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </script>
+                                <script id="not_found" type="text/template">
+                                    <div class="eAutoComplete_itemList">
+                                        <a class="miniItem__link" href="{path}/books/{id}" >
+                                            <img class="col-my-2" src="{path}/books-images/{id}.jpg" alt="book image">
+                                            <div class="infoBook col-my-10">
+                                                <div class="title">{title}</div>
+                                                <div>{author}</div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </script>
+                                <script id="more" type="text/template">
+                                    <div class="eAutoComplete_itemMore">
+                                        <a href="{pathUrl}/api/v1/books?search={text}">
+                                            <span>Show All</span>
+                                        </a>
+                                    </div>
+                                </script>
                                 <div id="list" size="" class="bAutoComplete mSearchAutoComplete"></div>
                             </div>
                         </form>
