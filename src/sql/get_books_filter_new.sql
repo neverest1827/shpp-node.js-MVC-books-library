@@ -1,3 +1,4 @@
-SELECT id, title, author FROM library
-# WHERE EXTRACT(DAY FROM DATEDIFF(NOW(), date)) < 3
-ORDER BY date DESC;
+SELECT id, title, author, (SELECT COUNT(*) FROM library) AS total
+FROM library
+ORDER BY date DESC
+LIMIT ? OFFSET ?;
