@@ -15,15 +15,6 @@
                         <form class="navbar-form navbar-right">
                             <div class="form-group">
                                 <input id="search" type="text" placeholder="Найти книгу" class="form-control">
-                                <script>
-                                    $("#search").bind("keypress", function (e) {
-                                        if (e.keyCode == 13) {
-                                            e.preventDefault();
-                                            alert("а вот это придется сделать самому. Ваш @rshmelev");
-                                        }
-                                    })
-                                </script>
-
                                 <div class="loader"><img src="./books-page/books-page_files/loading.gif"></div>
                                 <div id="list" size="" class="bAutoComplete mSearchAutoComplete"></div>
                             </div>
