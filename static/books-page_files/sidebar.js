@@ -14,14 +14,15 @@ $('.sidebar_item').click(function (event) {
     }());
 });
 
-function changeHistoryStateWithParams(action, filter, offset) {
+function changeHistoryStateWithParams(action, filter, offset, boolean) {
     if (action = ''){
         return;
     }
 
     offset = parseInt(offset);
     var count = offset ? global.number_of_items_onscroll : global.items_limit_on_page_load;
-    var queryString = '?filter=' + filter + '&count=' + (offset + count);
+    count = (boolean) ? offset + count : offset
+    var queryString = '?filter=' + filter + '&count=' + count;
     if (action === 'push') {
         window.history.pushState('','',queryString);
     } else {
