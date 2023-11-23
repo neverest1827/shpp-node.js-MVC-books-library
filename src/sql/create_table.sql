@@ -10,5 +10,6 @@ CREATE TABLE library
     stars INT,
     date DATETIME,
     clicks INT,
+    views INT,
     event BOOLEAN
 )

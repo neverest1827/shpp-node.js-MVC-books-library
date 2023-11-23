@@ -62,6 +62,7 @@ try {
                 getRandomInt(max_rating, min_rating),
                 generateRandomDatetime(),
                 book.clicks,
+                book.views,
                 getRandomBoolean()
             ]
         );

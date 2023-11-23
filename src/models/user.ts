@@ -120,3 +120,25 @@ export async function updateBookStatistics(id: string): Promise<TypeResult>{
         await connection.end()
     }
 }
+export async function updateViewsPage(id: string): Promise<TypeResult>{
+    console.log(id)
+    const connection: Connection = await mysql.createConnection(JSON.parse(config));
+    try {
+        await connection.connect()
+        const sql_command: string = await fs.readFile(`${path_to_sql_scripts}/update_book_views_by_id.sql`, "utf-8");
+        await connection.execute(sql_command, [id]);
+        await connection.execute<TypeTotal>(sql_command, [id])
+        return {
+            success: true,
+        }
+
+    } catch (err) {
+        return {
+            success: false,
+            msg: `${err}`
+        }
+
+    } finally {
+        await connection.end()
+    }
+}

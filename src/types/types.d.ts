@@ -21,7 +21,7 @@ type TypeData = {
 
 type TypeResultSuccess = {
     success: boolean,
-    data: TypeData | TypeBook
+    data?: TypeData | TypeBook
 }
 
 type TypeResultError = {

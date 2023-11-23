@@ -43,7 +43,8 @@ export async function getBook(req: Request, res: Response) {
 }
 
 export async function getBookPage(req: Request, res: Response){
-
+    const id = +req.params.book_id
+    if (id) await User.updateViewsPage(req.params.book_id);   //TODO виправити костиль, викликається 3 рази
     try {
         res.status(200).render('book-page.ejs')
     } catch (err) {

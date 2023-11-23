@@ -11,7 +11,7 @@ user_router.get('/api/v1/books', async (req: Request, res: Response) => {
     switch (Object.keys(req.query)[0]){
         case 'filter': return await UserController.getFilteredBooks(req, res);
         case 'search': return await UserController.search(req, res);
-        case 'updateId': return await UserController.updateBookStatistics(req, res);
+        case 'update': return await UserController.updateBookStatistics(req, res);
     }
 });
 

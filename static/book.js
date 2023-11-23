@@ -2,16 +2,16 @@ var pathname = $(location).attr('pathname');
 var bookIdPosition = pathname.lastIndexOf('/') + 1;
 var isBookInUse = false;
 var bookId;
+var id = pathname.substr(bookIdPosition)
 
-$(document).ready(function () {
-    doAjaxQuery('GET', '/api/v1/books/' + pathname.substr(bookIdPosition), null, function(res) {
-        view.fillBookInfo(res.data);
-        if (res.data.event) {
+doAjaxQuery('GET', '/api/v1/books/' + id, null, function(res) {
+    view.fillBookInfo(res.data);
+    if (res.data.event) {
             isBookInUse = true;
             bookId = res.data.id;
-        }
-    });
+    }
 });
+
 
 /* --------------------Show the result, for sending the -----------------------
 ----------------------email in the queue for the book ---------------------- */
