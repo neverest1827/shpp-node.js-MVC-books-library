@@ -1,9 +1,17 @@
 /* ----------------------------- begin view ----------------------------------*/
 var view = {
+    displayRating: function (rating) {
+        $("#rating").rating({
+            min:0, max:5, step:1, size:'lg',
+            displayOnly: true,
+            showCaption: false
+        });
+        $("#rating").rating('update', rating);
+    },
     fillFields: function(obj, fields, func) {
-        fields = fields.split(/, */);
+        fields = fields.split(',');
         fields.map(function(f) {
-            ($('#' + f)[func])(obj[f]);
+            $('#' + f)[func](obj[f]);
         });
     },
     selectFields: function(fields, func) {
@@ -95,13 +103,14 @@ var view = {
         });
     },
     fillBookInfo: function(book) {
-        // console.log(book);
         view.fillFields(book, 'title,author,year,pages,isbn,description', "html");
+        view.displayRating(book.stars)
         $('#id').attr({
             'book-id': book.id,
             'busy': book.event
         });
-        $('#bookImg img').attr('src', '/img/books/' + book.id + '.jpg');
+
+        $('#bookImg img').attr('src', '/books-images/' + book.id + '.jpg');
         $('.description').html(book.description);
     },
     normalDateFormat: function(date) {

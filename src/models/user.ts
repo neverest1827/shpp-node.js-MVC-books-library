@@ -1,6 +1,7 @@
-import mysql, { Connection } from "mysql2/promise";
-import {TypeBooks, TypeResult} from "types";
+import mysql, {Connection, ResultSetHeader} from "mysql2/promise";
+import {TypeBook, TypeResult, TypeTotal} from "types";
 import fs from "fs/promises";
+
 
 const config: string = await fs.readFile('./config.json', 'utf-8');
 const default_offset: string = '0';
@@ -11,13 +12,15 @@ export async function getBooks(filter: string, limit: string, offset: string): P
     const connection: Connection = await mysql.createConnection(JSON.parse(config));
     try {
         await connection.connect()
+        const sql_get_total: string = await fs.readFile(`${path_to_sql_scripts}/get_total.sql`, "utf-8")
         const sql_command: string = await getSqlCommand(filter)
-        const [books, fields ] = await connection.execute(sql_command, [limit, offset]);
-        const total: number = +(books as TypeBooks[])[0].total
+        const [books] = await connection.execute(sql_command, [limit, offset]);
+        const [result] = await connection.execute<TypeTotal>(sql_get_total);
+        const total = +result[0].total
         return {
             success: true,
             data: {
-                books: books as TypeBooks[],
+                books: books as TypeBook[],
                 filter: filter,
                 offset: offset,
                 total: {
@@ -48,11 +51,11 @@ export async function search(searchText: string): Promise<TypeResult> {
         await connection.connect()
         const sql_command: string = await fs.readFile(`${path_to_sql_scripts}/search.sql`, 'utf-8');
         const [books, fields ] = await connection.execute(sql_command, [searchText, searchText, searchText]);
-        const total: number = (books as TypeBooks[]).length
+        const total: number = (books as TypeBook[]).length
         return {
             success: true,
             data: {
-                books: books as TypeBooks[],
+                books: books as TypeBook[],
                 total: {
                     amount: total,
                 }
@@ -60,6 +63,54 @@ export async function search(searchText: string): Promise<TypeResult> {
         }
     } catch (err) {
         console.log(err)
+        return {
+            success: false,
+            msg: `${err}`
+        }
+
+    } finally {
+        await connection.end()
+    }
+}
+
+export async function getBook(id: string): Promise<TypeResult> {
+    const connection: Connection = await mysql.createConnection(JSON.parse(config));
+    try {
+        await connection.connect()
+        const sql_command: string = await fs.readFile(`${path_to_sql_scripts}/get_book_by_id.sql`, "utf-8");
+        const [books, fields ] = await connection.execute(sql_command, [id]);
+        const book = (books as TypeBook[])[0]
+        return {
+            success: true,
+            data: book
+        }
+
+    } catch (err) {
+        return {
+            success: false,
+            msg: `${err}`
+        }
+
+    } finally {
+        await connection.end()
+    }
+}
+
+export async function updateBookStatistics(id: string): Promise<TypeResult>{
+    const connection: Connection = await mysql.createConnection(JSON.parse(config));
+    try {
+        await connection.connect()
+        const sql_command: string = await fs.readFile(`${path_to_sql_scripts}/update_book_statistics_by_id.sql`, "utf-8");
+        const sql_get_statistics: string = await fs.readFile(`${path_to_sql_scripts}/get_book_statistics_by_id.sql`, "utf-8");
+        await connection.execute(sql_command, [id]);
+        const [result] = await connection.execute<TypeTotal>(sql_get_statistics, [id])
+        const countClicks = result[0].clicks
+        return {
+            success: true,
+            data: countClicks
+        }
+
+    } catch (err) {
         return {
             success: false,
             msg: `${err}`

@@ -3,13 +3,15 @@ var bookIdPosition = pathname.lastIndexOf('/') + 1;
 var isBookInUse = false;
 var bookId;
 
-// doAjaxQuery('GET', '/api/v1/books/' + pathname.substr(bookIdPosition), null, function(res) {
-//     view.fillBookInfo(res.data);
-//     if (res.data.event) {
-//         isBookInUse = true;
-//         bookId = res.data.id;
-//     }
-// });
+$(document).ready(function () {
+    doAjaxQuery('GET', '/api/v1/books/' + pathname.substr(bookIdPosition), null, function(res) {
+        view.fillBookInfo(res.data);
+        if (res.data.event) {
+            isBookInUse = true;
+            bookId = res.data.id;
+        }
+    });
+});
 
 /* --------------------Show the result, for sending the -----------------------
 ----------------------email in the queue for the book ---------------------- */
@@ -63,16 +65,18 @@ $('.btnBookID').click(function(event) {
     //         "Сейчас эта книга находится на руках, у одного из наших учеников." +
     //         " Оставь свой email и мы сообщим, как только книга вновь" +
     //         " появится в библиотеке", bookId);
-    // } else 
-    {
-        alert(
-            "Книга свободна и ты можешь прийти за ней." +
-            " Наш адрес: г. Кропивницкий, переулок Васильевский 10, 5 этаж." +
-            " Лучше предварительно прозвонить и предупредить нас, чтоб " +
-            " не попасть в неловкую ситуацию. Тел. 099 196 24 69"+
-            " \n\n"+
-            "******************\n"+
-            "Кстати, если вы читаете этот текст, то автор сайта еще не отсылает ajax запрос на увеличение количества кликов на кнопку по этой книге"
-        );
-    }
+    // } else
+    // {
+        doAjaxQuery('GET', '/api/v1/books/?updateId=' + pathname.substr(bookIdPosition), null, function(res) {
+            alert(
+                "Книга свободна и ты можешь прийти за ней." +
+                " Наш адрес: г. Кропивницкий, переулок Васильевский 10, 5 этаж." +
+                " Лучше предварительно прозвонить и предупредить нас, чтоб " +
+                " не попасть в неловкую ситуацию. Тел. 099 196 24 69"+
+                " \n\n"+
+                "******************\n"+
+                `Количество кликов по этой книге ${res.success ? res.data : res.msg}`
+            );
+        });
+    // }
 });

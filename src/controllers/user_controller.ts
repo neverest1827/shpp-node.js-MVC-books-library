@@ -32,3 +32,34 @@ export async function search(req: Request, res: Response) {
         res.status(500).send(result);
     }
 }
+
+export async function getBook(req: Request, res: Response) {
+    const result: TypeResult = await User.getBook(req.params.book_id);
+    if (result.success) {
+        res.status(200).send(result);
+    } else {
+        res.status(500).send(result);
+    }
+}
+
+export async function getBookPage(req: Request, res: Response){
+
+    try {
+        res.status(200).render('book-page.ejs')
+    } catch (err) {
+        res.status(404).send({
+            "success": false,
+            "msg": "file not found"
+        });
+    }
+}
+
+export async function updateBookStatistics(req: Request, res: Response){
+    const id: string = req.query.updateId as string
+    const result: TypeResult = await User.updateBookStatistics(id);
+    if (result.success) {
+        res.status(200).send(result);
+    } else {
+        res.status(500).send(result);
+    }
+}

@@ -1,4 +1,4 @@
-export type TypeBooks = {
+export type TypeBook = {
     [key: string]: string | number;
 }
 
@@ -15,18 +15,13 @@ type TypeQuerySearch = {
 
 export type TypeQuery = TypeQueryFilter | TypeQuerySearch
 
-
-type TypeTotal = {
-    amount: number
-}
-
 type TypeData = {
-    [key: string] : TypeBooks[] | TypeTotal | string | number
+    [key: string] : TypeBook[] | TypeTotal | string | number
 }
 
 type TypeResultSuccess = {
     success: boolean,
-    data: TypeData
+    data: TypeData | TypeBook
 }
 
 type TypeResultError = {
@@ -35,3 +30,11 @@ type TypeResultError = {
 }
 
 export type TypeResult = TypeResultSuccess | TypeResultError;
+
+type TypeDatabaseResult = OkPacket | RowDataPacket[] | ResultSetHeader[] | RowDataPacket[][] | OkPacket[] | ProcedureCallPacket;
+
+export type TypeTotal = {
+    total: number
+} & TypeDatabaseResult;
+
+
