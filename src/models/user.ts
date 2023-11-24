@@ -1,4 +1,4 @@
-import mysql, {Connection, ResultSetHeader} from "mysql2/promise";
+import mysql, {Connection} from "mysql2/promise";
 import {TypeBook, TypeResult, TypeTotal} from "types";
 import fs from "fs/promises";
 
@@ -121,7 +121,6 @@ export async function updateBookStatistics(id: string): Promise<TypeResult>{
     }
 }
 export async function updateViewsPage(id: string): Promise<TypeResult>{
-    console.log(id)
     const connection: Connection = await mysql.createConnection(JSON.parse(config));
     try {
         await connection.connect()

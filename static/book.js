@@ -67,7 +67,7 @@ $('.btnBookID').click(function(event) {
     //         " появится в библиотеке", bookId);
     // } else
     // {
-        doAjaxQuery('GET', '/api/v1/books/?updateId=' + pathname.substr(bookIdPosition), null, function(res) {
+        doAjaxQuery('GET', '/api/v1/books/?update=' + pathname.substr(bookIdPosition), null, function(res) {
             alert(
                 "Книга свободна и ты можешь прийти за ней." +
                 " Наш адрес: г. Кропивницкий, переулок Васильевский 10, 5 этаж." +

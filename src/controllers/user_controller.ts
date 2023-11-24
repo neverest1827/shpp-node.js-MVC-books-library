@@ -56,7 +56,7 @@ export async function getBookPage(req: Request, res: Response){
 }
 
 export async function updateBookStatistics(req: Request, res: Response){
-    const id: string = req.query.updateId as string
+    const id: string = req.query.update as string
     const result: TypeResult = await User.updateBookStatistics(id);
     if (result.success) {
         res.status(200).send(result);
