@@ -26,12 +26,13 @@ window.addEventListener('load', function (){
     document.querySelector('.logout').addEventListener('click', logout)
     async function logout(e){
         e.preventDefault()
-        const result = await fetch('/logout');
-        if (result.redirected) {
-            window.location.href = result.url;
-        } else {
-            alert(result.msg)
-        }
+        window.location.href = '/';
+        await fetch('/admin', {
+            credentials: 'include',
+            headers: {
+                'Authorization': 'Basic ' + btoa('none:none'),
+            }
+        });
     }
 
     document.getElementById('customFile').addEventListener('change', handleImageUpload)
