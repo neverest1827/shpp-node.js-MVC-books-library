@@ -64,3 +64,12 @@ export async function updateBookStatistics(req: Request, res: Response){
         res.status(500).send(result);
     }
 }
+
+export async function getSearchPage(req: Request, res: Response){
+    const query: TypeQuerySearch = req.query as TypeQuerySearch
+    try {
+        res.render('search-page.ejs', {query})
+    } catch (err){
+        res.status(404).send({"Error": "Page not found"});
+    }
+}
