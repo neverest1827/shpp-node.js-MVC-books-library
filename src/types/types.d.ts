@@ -37,4 +37,15 @@ export type TypeTotal = {
     total: number
 } & TypeDatabaseResult;
 
+type TypeFormData = {
+    book_title: string;
+    book_year: string;
+    book_author1: string;
+    book_author2: string;
+    book_author3: string;
+    book_description: string;
+}
+
+type TypeFormImage = { book_img: Express.Multer.File[] } | undefined
+
 

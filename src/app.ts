@@ -1,4 +1,4 @@
-import express, {Express, Request, Response} from "express"
+import express, {Express} from "express"
 import { fileURLToPath } from 'url';
 import bodyParser from "body-parser";
 import path from "path";
@@ -11,6 +11,7 @@ const app: Express = express();
 const port: number = 3000;
 
 app.use(express.static(path.join(__dirname, '../static')));
+app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(user_router);
 app.use(admin_router)

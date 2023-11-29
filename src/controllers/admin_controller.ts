@@ -1,7 +1,7 @@
 import {Request, Response} from "express";
 import * as Admin from '../models/admin.js';
-import {TypeBook, TypeQuery, TypeQueryFilter, TypeResult} from "types";
-import path from "path";
+import { TypeQueryFilter, TypeResult } from "types";
+
 
 export async function logout(req: Request, res: Response){
     res.redirect('/');
@@ -18,5 +18,14 @@ export async function getBooksInfo(req: Request, res: Response) {
         res.status(200).send(result)
     } else {
         res.status(500).send(result)
+    }
+}
+
+export async function addNewBook(req: Request, res: Response) { //TODO переробити щоб було звуження типів (щось з типами)
+    const result: TypeResult = await Admin.addNewBook(req);
+    if (result.success){
+        res.status(200).redirect('/admin');
+    } else {
+        res.status(400).send({"Error": "err"})
     }
 }

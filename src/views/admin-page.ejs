@@ -65,21 +65,21 @@
         <div class="admin-panel__form row mt-5">
             <div class="col-md-12">
                 <h2>Додати нову книгу</h2>
-                <form>
+                <form action="/admin/api/v1" method="post" enctype="multipart/form-data">
                     <div class="form__inner row">
                         <div class="form-group mr-4">
-                            <input type="text" class="form-control mb-3" id="bookTitle" placeholder="Назва книги">
-                            <input type="text" class="form-control mb-3" id="bookYear" placeholder="Рік видання">
+                            <input type="text" class="form-control mb-3" id="bookTitle" name="book_title" placeholder="Назва книги" required>
+                            <input type="text" class="form-control mb-3" id="bookYear" name="book_year" placeholder="Рік видання" required>
                             <div class="custom-file">
-                                <input id="customFile" class="custom-file-input" type="file"  >
+                                <input id="customFile" class="custom-file-input" name="book_img" type="file" required >
                                 <label class="custom-file-label" for="customFile">Виберіть зображеня</label>
                             </div>
                         </div>
                         <div class="form-group">
-                            <input type="text" class="form-control mb-3" placeholder="Автор1">
-                            <input type="text" class="form-control mb-3" placeholder="Автор2">
-                            <input type="text" class="form-control mb-3" placeholder="Автор3">
-                            <textarea class="textarea form-control" ></textarea>
+                            <input type="text" class="form-control mb-3" name="book_author1" placeholder="Автор1" required>
+                            <input type="text" class="form-control mb-3" name="book_author2" placeholder="Автор2">
+                            <input type="text" class="form-control mb-3" name="book_author3" placeholder="Автор3">
+                            <textarea class="textarea form-control" name="book_description"></textarea>
                         </div>
                         <div id="imagePreview" class="ml-3"></div>
                     </div>
