@@ -1,4 +1,4 @@
-CREATE TABLE library
+CREATE TABLE IF NOT EXISTS library
 (
     id INT primary key auto_increment,
     isbn VARCHAR(255),
@@ -11,5 +11,6 @@ CREATE TABLE library
     date DATETIME,
     clicks INT,
     views INT,
-    event BOOLEAN
+    event BOOLEAN,
+    delete_time DATETIME
 )
