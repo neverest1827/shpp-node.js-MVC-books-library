@@ -1,7 +1,7 @@
 import {Migrate} from "./classes/migrate.js";
 import {DataBase} from "./classes/data_base.js";
 
-type MigrateMethod = 'create' | 'startMigration' | 'versionExist' | 'ls';
+type MigrateMethod = 'create' | 'up' | 'down' | 'ls';
 
 const dataBase: DataBase = await DataBase.getInstance();
 const path_to_migrations: string = './migrations/';
