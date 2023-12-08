@@ -4,7 +4,7 @@ import {TypeBook} from "types";
 
 const data: string = fs.readFileSync('../../data.json', 'utf-8');
 const config: string = fs.readFileSync('../../config.json', 'utf-8');
-const sql_script: string = fs.readFileSync('./fill_table.sql', "utf-8");
+const sql_script: string = fs.readFileSync('./fill_table_v1.sql', "utf-8");
 const books: TypeBook[] = JSON.parse(data);
 const options = JSON.parse(config)
 const max_rating: number = 5;
