@@ -1,17 +1,17 @@
 import fs from "fs/promises";
-import mysql, {Connection, ResultSetHeader} from "mysql2/promise";
+import mysql, {Connection, ResultSetHeader, RowDataPacket} from "mysql2/promise";
+import fast_csv from "fast-csv";
+import {TypeData} from "types";
 
 export class DataBase {
     private static instance: DataBase | null = null;
-    connection: Connection
+    config: object
     path_to_sql_scripts: string
-    sql_scripts: {[key: string]: string | undefined}
-    constructor(connection: Connection, path_to_sql_scripts: string) {
-        this.connection = connection;
+    sql_scripts: {[key: string]: string}
+    constructor(config: object, path_to_sql_scripts: string) {
+        this.config = config;
         this.path_to_sql_scripts = path_to_sql_scripts;
-        this.sql_scripts = {
-            create_table: undefined,
-        }
+        this.sql_scripts = {};
     }
 
     static async getInstance(): Promise<DataBase> {
@@ -19,59 +19,84 @@ export class DataBase {
             const path_to_sql_scripts: string = "./sql/";
             const path_to_config: string = "../config.json";
             const config: string = await fs.readFile(path_to_config, 'utf-8');
-            const connection: Connection = await this.createConnection(JSON.parse(config));
-            DataBase.instance = new DataBase(connection, path_to_sql_scripts);
+            DataBase.instance = new DataBase(JSON.parse(config), path_to_sql_scripts);
         }
         return DataBase.instance;
     }
 
-    static async createConnection(config: object) : Promise<Connection> {
+    async createConnection() : Promise<Connection> {
         try {
-            return await mysql.createConnection(config);
+            return await mysql.createConnection(this.config);
         } catch (err){
             throw new Error(`Connection failed! ${err}`)
         }
     }
 
-    async createTable(version: string): Promise<void> {
-        console.log('create table');
-        // try {
-        //     const sql_script: string = await this.getSqlScript(`create_table_${version.toLowerCase()}.sql`);
-        //     await connection.connect()
-        //     const [result] = await connection.execute<ResultSetHeader>(sql_script);
-        //     return result;
-        // } catch (err){
-        //     throw new Error(`${err}`)
-        // } finally {
-        //     await connection.end()
-        // }
-    }
-
-    async dropTable(version: string): Promise<void> {
-        console.log('drop table');
-    }
-
-    async getSqlScript(fileName: string): Promise<string> {
+    async execute(sqlScript: string, data?: any){
+        const connection: Connection = await this.createConnection()
         try {
-            return await fs.readFile(this.path_to_sql_scripts, 'utf-8');
+            if (data && data.length) return await connection.execute(sqlScript, data);
+            return await connection.execute(sqlScript);
         } catch (err) {
+            console.log(err);
             throw new Error(`${err}`);
+        } finally {
+            await connection.end();
         }
     }
 
 
+    async getSqlScript(fileName: string): Promise<string> {
+        if (Object.keys(this.sql_scripts).includes(fileName)) return this.sql_scripts[fileName]
+        try {
+            const sql_script: string = await fs.readFile(this.path_to_sql_scripts + fileName, 'utf-8');
+            this.sql_scripts[fileName] = sql_script;
+            return sql_script;
+        } catch (err) {
+            console.log(err);
+            throw new Error(`${err}`);
+        }
+    }
 
+    async importFromCsv(tableName: string, csvData: [string | number| boolean]): Promise<void> {
+        const sql_script = await this.getSqlScript('fill_table_v1.sql');
+        await this.execute(sql_script, csvData);
+    }
 
+    async parseCsv(): Promise<TypeData[]> {
+        try {
+            const data: string = await fs.readFile('data.csv', "utf-8");
+
+            return await new Promise((resolve, reject) => {
+                const parsedData: TypeData[] = [];
+                fast_csv
+                    .parseString(data, { headers: true })
+                    .on('data', (row) => {
+                        parsedData.push(row);
+                    })
+                    .on('end', () => {
+                        resolve(parsedData);
+                    })
+                    .on('error', (error) => {
+                        reject(error);
+                    });
+            });
+
+        } catch (err){
+            throw new Error(`${err}`);
+        }
+    }
+
+    async exportToCsv(tableName: string): Promise<void>{
+        const connection: Connection = await this.createConnection()
+        try {
+            const [result] = await connection.execute<RowDataPacket[]>(`SELECT * FROM ${tableName}`);
+            const jsonData = JSON.parse(JSON.stringify(result));
+            await fs.writeFile('data.csv', fast_csv.write(jsonData, {headers: true}))
+        } catch (err){
+            throw new Error(`${err}`);
+        } finally {
+            await connection.end();
+        }
+    }
 }
-
-const config: string = await fs.readFile('../config.json', 'utf-8');
-const path_to_sql_scripts: string = '../sql';
-
-let connection: Connection
-try {
-    connection = await mysql.createConnection(JSON.parse(config));
-} catch (err){
-    throw new Error(`Connection failed! ${err}`)
-}
-
-export const handler_db: DataBase = new DataBase(connection, path_to_sql_scripts);
