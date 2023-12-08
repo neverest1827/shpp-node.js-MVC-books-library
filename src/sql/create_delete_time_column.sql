@@ -1,0 +1,2 @@
+ALTER TABLE library
+ADD COLUMN delete_time DATETIME DEFAULT NULL;
