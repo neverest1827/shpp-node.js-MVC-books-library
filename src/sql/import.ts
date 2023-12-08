@@ -25,7 +25,7 @@ async function importFromCsv(tableName: string){
         for(const key of Object.keys(csvData)){
             const bookInfo: TypeData = prepareData(csvData[key]);
             try {
-                const sql_script: string = await fs.readFile('fill_table.sql', 'utf-8');
+                const sql_script: string = await fs.readFile('fill_table_v1.sql', 'utf-8');
                 await connection.execute(sql_script, bookInfo);
             } catch (err){
                 console.log(err)

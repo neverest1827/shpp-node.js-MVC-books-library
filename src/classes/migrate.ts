@@ -58,23 +58,28 @@ export class Migrate {
         const keys: string[] = Object.keys(this.migrations);
         const targetMigrationPosition: number = keys.indexOf(targetMigrationName);
 
-        if (this.currentMigrationName && targetMigrationPosition !== 0) {
-            const currentMigrationPosition: number = keys.indexOf(this.currentMigrationName);
+        if (targetMigrationPosition !== 0) {
+            const currentMigrationPosition: number = keys.indexOf(this.currentMigrationName!)
 
             if (currentMigrationPosition < targetMigrationPosition) {
-                for (let index: number = currentMigrationPosition; index < targetMigrationPosition; index++) {
+
+                for (let index: number = currentMigrationPosition + 1; index <= targetMigrationPosition; index++) {
                     await this.startMigration(keys[index], 'up');
                 }
+
             } else {
                 console.log('Incorrect operation! Target migration must been bigger then current migration.')
                 return
             }
 
         } else {
+            if (this.currentMigrationName) {
+                console.log('Incorrect operation! Target migration must been bigger then current migration.')
+                return
+            }
             await this.startMigration(targetMigrationName, 'up');
         }
 
-        this.currentMigrationName = targetMigrationName;
         await this.setCurrentMigrationName(targetMigrationName);
     }
 
@@ -89,6 +94,7 @@ export class Migrate {
     }
 
     async setCurrentMigrationName(name: string | undefined) {
+        this.currentMigrationName = name;
         if (!name) return await fs.unlink('./migrate_log.json');
 
         try {
@@ -104,35 +110,45 @@ export class Migrate {
         const keys: string[] = Object.keys(this.migrations);
         const targetMigrationPosition: number = keys.indexOf(targetMigrationName);
 
-        if (this.currentMigrationName && targetMigrationPosition !== 0) {
+        if (this.currentMigrationName) {
             const currentMigrationPosition: number = keys.indexOf(this.currentMigrationName);
 
-            if (currentMigrationPosition > targetMigrationPosition) {
+            if (currentMigrationPosition >= targetMigrationPosition) {
 
-                for (let index: number = currentMigrationPosition; index > targetMigrationPosition; index--) {
+                for (let index: number = currentMigrationPosition; index >= targetMigrationPosition; index--) {
                     await this.startMigration(keys[index], 'down');
                 }
+
             } else {
                 console.log('Incorrect operation! Target migration must been smaller then current migration.')
                 return
             }
 
         } else {
-            await this.startMigration(targetMigrationName, 'down');
+            console.log('Incorrect operation! Not a single migration has been completed.')
         }
 
-        targetMigrationName = targetMigrationPosition === 0 ? undefined : targetMigrationName
-        await this.setCurrentMigrationName(targetMigrationName)
+        if(
+            targetMigrationName && this.currentMigrationName &&
+            !targetMigrationName.localeCompare(this.currentMigrationName)
+        ) {
+            await this.setCurrentMigrationName(keys[targetMigrationPosition - 1]);
+        } else {
+            targetMigrationName =
+                targetMigrationPosition === 0 ? undefined : targetMigrationName;
+            await this.setCurrentMigrationName(targetMigrationName);
+        }
     }
 
     async startMigration(migrationName: string, methodName: 'up' | 'down'){
         const start: number = migrationName.indexOf('-') + 1;
-        process.stdout.write(`${migrationName.substring(start)}: `);
+        process.stdout.write(`${methodName} ${migrationName.substring(start)}: `);
         try {
             await this.migrations[migrationName][methodName]();
             console.log('Done')
         } catch (err){
             console.log('Fail')
+            console.error(err);
         }
     }
 
