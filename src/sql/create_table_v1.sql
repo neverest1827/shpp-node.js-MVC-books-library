@@ -11,5 +11,6 @@ CREATE TABLE IF NOT EXISTS library
     date DATETIME,
     clicks INT,
     views INT,
-    event BOOLEAN
+    event BOOLEAN,
+    delete_time DATETIME
 )

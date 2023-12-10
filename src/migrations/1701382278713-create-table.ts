@@ -29,6 +29,7 @@ export default {
                     book.clicks ? book.clicks : null,
                     book.views ? book.views : null,
                     !!book.event,
+                    book.delete_time ? book.delete_time : null
                 ]);
             }
         } catch (err) {
