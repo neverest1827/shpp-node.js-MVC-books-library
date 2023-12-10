@@ -1,0 +1,1 @@
+INSERT INTO authors (author_name) VALUE (?);
