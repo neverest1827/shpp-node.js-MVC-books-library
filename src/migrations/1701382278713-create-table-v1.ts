@@ -6,10 +6,11 @@ const { DataBase } = await import(path_to_class);
 export default {
 
     async up(): Promise<void>{
+        const version: string = 'v1';
         try {
             const handlerDb = await DataBase.getInstance();
-            const sql_script: string = await handlerDb.getSqlScript('create_table_v1.sql');
-            const sql_fill_script = await handlerDb.getSqlScript('fill_table_v1.sql');
+            const sql_script: string = await handlerDb.getSqlScript('create_table.sql', version);
+            const sql_fill_script = await handlerDb.getSqlScript('insert_new_book.sql', version);
             await handlerDb.execute(sql_script);
 
             const books = await handlerDb.parseCsv()
@@ -40,9 +41,9 @@ export default {
     async down(): Promise<void>{
         try {
             const handlerDb = await DataBase.getInstance();
-            const sql_script: string = await handlerDb.getSqlScript('drop_table_v1.sql');
+            const sql_script: string = await handlerDb.getSqlScript('drop_table.sql');
             await handlerDb.exportToCsv('library');
-            await handlerDb.execute(sql_script);
+            await handlerDb.execute(sql_script.replace(/{tableName}/, 'library'));
         } catch (err){
             throw new Error(`${err}`);
         }
