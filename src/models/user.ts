@@ -1,143 +1,113 @@
-import mysql, {Connection} from "mysql2/promise";
-import {TypeBook, TypeResult, TypeTotal} from "types";
-import fs from "fs/promises";
+import {TypeBook, TypeResult, TypeResultError, TypeResultSuccess, TypeTotal} from "types";
+import {DataBase} from "../classes/data_base.js";
 
-
-const config: string = await fs.readFile('./config.json', 'utf-8');
 const default_offset: string = '0';
-const path_to_sql_scripts: string = './dist/sql';
+const handler_db: DataBase = await DataBase.getInstance();
+const version: string | undefined = await getVersion();
+
 export async function getBooks(filter: string, limit: string, offset: string): Promise<TypeResult> {
-    offset = offset ? offset : default_offset;
+        offset = offset ? offset : default_offset;
 
-    const connection: Connection = await mysql.createConnection(JSON.parse(config));
-    try {
-        await connection.connect()
-        const sql_get_total: string = await fs.readFile(`${path_to_sql_scripts}/get_total.sql`, "utf-8")
-        const sql_command: string = await getSqlCommand(filter)
-        const [books] = await connection.execute(sql_command, [limit, offset]);
-        const [result] = await connection.execute<TypeTotal>(sql_get_total);
-        const total = +result[0].total
-        return {
-            success: true,
-            data: {
-                books: books as TypeBook[],
-                filter: filter,
-                offset: offset,
-                total: {
-                    amount: total,
-                }
-            }
+        try {
+            const sql_get_total: string =
+                await handler_db.getSqlScript('get_total.sql', version);
+            const sql_get_filtered_books: string =
+                await handler_db.getSqlScript(`get_books_filter_${filter}.sql`, version);
+            const [books] =
+                await handler_db.execute(sql_get_filtered_books, [limit, offset]) as TypeBook[][];
+            const [result] = await handler_db.execute(sql_get_total) as TypeTotal[][]
+            return buildSuccessfulResult(books, result[0].total, offset, filter);
+        } catch (err) {
+            return getTextError(err);
         }
-
-    } catch (err) {
-        return {
-            success: false,
-            msg: `${err}`
-        }
-
-    } finally {
-        await connection.end()
-    }
-}
-
-async function getSqlCommand(filter: string): Promise<string> {
-    return await fs.readFile(`${path_to_sql_scripts}/get_books_filter_${filter}.sql`, 'utf-8');
 }
 
 export async function search(searchText: string): Promise<TypeResult> {
     searchText = `%${searchText}%`;
-    const connection: Connection = await mysql.createConnection(JSON.parse(config));
     try {
-        await connection.connect()
-        const sql_command: string = await fs.readFile(`${path_to_sql_scripts}/search.sql`, 'utf-8');
-        const [books, fields ] = await connection.execute(sql_command, [searchText, searchText, searchText]);
-        const total: number = (books as TypeBook[]).length
-        return {
-            success: true,
-            data: {
-                books: books as TypeBook[],
-                total: {
-                    amount: total,
-                }
-            }
-        }
+        const sql_search: string = await handler_db.getSqlScript('search.sql', version);
+        const [books] =
+            await handler_db.execute(sql_search, [searchText, searchText, searchText]) as TypeBook[][]
+        return buildSuccessfulResult(books, books.length);
     } catch (err) {
-        console.log(err)
-        return {
-            success: false,
-            msg: `${err}`
-        }
-
-    } finally {
-        await connection.end()
+        return getTextError(err);
     }
 }
 
 export async function getBook(id: string): Promise<TypeResult> {
-    const connection: Connection = await mysql.createConnection(JSON.parse(config));
     try {
-        await connection.connect()
-        const sql_command: string = await fs.readFile(`${path_to_sql_scripts}/get_book_by_id.sql`, "utf-8");
-        const [books, fields ] = await connection.execute(sql_command, [id]);
-        const book = (books as TypeBook[])[0]
-        return {
-            success: true,
-            data: book
-        }
-
+        const sql_get_book_by_id: string = await handler_db.getSqlScript('get_book_by_id.sql', version);
+        const [books] = await handler_db.execute(sql_get_book_by_id, [id]) as TypeBook[][];
+        return buildSuccessfulResult(books[0])
     } catch (err) {
-        return {
-            success: false,
-            msg: `${err}`
-        }
-
-    } finally {
-        await connection.end()
+        return getTextError(err);
     }
 }
 
 export async function updateBookStatistics(id: string): Promise<TypeResult>{
-    const connection: Connection = await mysql.createConnection(JSON.parse(config));
     try {
-        await connection.connect()
-        const sql_command: string = await fs.readFile(`${path_to_sql_scripts}/update_book_statistics_by_id.sql`, "utf-8");
-        const sql_get_statistics: string = await fs.readFile(`${path_to_sql_scripts}/get_book_statistics_by_id.sql`, "utf-8");
-        await connection.execute(sql_command, [id]);
-        const [result] = await connection.execute<TypeTotal>(sql_get_statistics, [id])
-        const countClicks = result[0].clicks
-        return {
-            success: true,
-            data: countClicks
-        }
-
+        const sql_update_book_statistics_by_id: string =
+            await handler_db.getSqlScript('update_book_statistics_by_id.sql', version);
+        await handler_db.execute(sql_update_book_statistics_by_id, [id]);
+        return buildSuccessfulResult();
     } catch (err) {
-        return {
-            success: false,
-            msg: `${err}`
-        }
-
-    } finally {
-        await connection.end()
+        return getTextError(err);
     }
 }
 export async function updateViewsPage(id: string): Promise<TypeResult>{
-    const connection: Connection = await mysql.createConnection(JSON.parse(config));
     try {
-        await connection.connect()
-        const sql_command: string = await fs.readFile(`${path_to_sql_scripts}/update_book_views_by_id.sql`, "utf-8");
-        await connection.execute(sql_command, [id]);
-        await connection.execute<TypeTotal>(sql_command, [id])
+        const sql_update_book_views_by_id: string =
+            await handler_db.getSqlScript('update_book_views_by_id.sql', version);
+        await handler_db.execute(sql_update_book_views_by_id, [id]);
+        return buildSuccessfulResult();
+    } catch (err) {
+        return getTextError(err);
+    }
+}
+
+function buildSuccessfulResult(
+    data?: TypeBook[] | TypeBook, total?: number, offset?: string, filter?: string
+): TypeResultSuccess {
+    if (!data) return {success: true}
+    if (!total && !offset) {
         return {
             success: true,
+            data: data
         }
-
-    } catch (err) {
-        return {
-            success: false,
-            msg: `${err}`
-        }
-
-    } finally {
-        await connection.end()
     }
+    return {
+        success: true,
+        data: {
+            books: data as TypeBook[],
+            filter: filter,
+            offset: offset,
+            total: {
+                amount: total,
+            }
+        }
+    }
+}
+
+function buildFailedResult(msg: string): TypeResultError{
+    return {
+        success: false,
+        msg: msg
+    }
+}
+
+async function getVersion(): Promise<string | undefined> {
+    const migration_name: string | undefined = await handler_db.getCurrentMigration();
+    if (migration_name) {
+        const start: number = migration_name.lastIndexOf('-') + 1;
+        return migration_name.substring(start);
+    }
+    return migration_name;
+}
+
+function getTextError(err: any): TypeResultError{
+    if (err instanceof Error) {
+        console.log(err.message);
+        return buildFailedResult(err.message);
+    }
+    return buildFailedResult('Unknown error');
 }

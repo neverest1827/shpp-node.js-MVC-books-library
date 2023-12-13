@@ -1,141 +1,185 @@
-import mysql, {Connection, FieldPacket, ResultSetHeader, RowDataPacket} from "mysql2/promise";
+import { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import fs from "fs/promises";
-import {TypeBook, TypeData, TypeFormData, TypeFormImage, TypeResult, TypeTotal} from "types";
+import {TypeBook, TypeFormData, TypeFormImage, TypeResult, TypeResultError, TypeResultSuccess, TypeTotal} from "types";
+import {DataBase} from "../classes/data_base.js";
+import {Book} from "../classes/book.js";
 import {Request} from "express";
 
-const config: string = await fs.readFile('./config.json', 'utf-8');
-const path_to_sql_scripts: string = './dist/sql';
+
 const path_to_images: string = './static/books-images/';
+
+const handler_db: DataBase = await DataBase.getInstance();
+const version: string | undefined = await getVersion();
+
 export async function getBooksInfo(offset: string, limit: string): Promise<TypeResult>{
-    const connection: Connection = await mysql.createConnection(JSON.parse(config));
+    try {
+        const sql_get_books_for_admin_page: string =
+            await handler_db.getSqlScript( 'get_books_for_admin_page.sql', version);
+        const sql_get_total: string = await handler_db.getSqlScript('get_total.sql', version);
+        const [books] =
+            await handler_db.execute(sql_get_books_for_admin_page, [limit, offset]) as TypeBook[][]
+        const [result] =
+            await handler_db.execute(sql_get_total) as TypeTotal[][]
+
+        return buildSuccessfulResult(books, result[0].total, offset);
+
+    } catch (err) {
+        return getTextError(err);
+    }
+}
+
+export async function addNewBook(req: Request): Promise<TypeResult>{
+    const data: TypeFormData = req.body;
+    const formImg: TypeFormImage = <TypeFormImage>req.files;
 
     try {
-        await connection.connect()
-        const sql_get_total: string = await fs.readFile(`${path_to_sql_scripts}/get_total.sql`, "utf-8")
-        const sql_command: string = await fs.readFile(`${path_to_sql_scripts}/get_books_for_admin_page.sql`, "utf-8")
-        const [books] = await connection.execute(sql_command, [limit, offset]);
-        const [result] = await connection.execute<TypeTotal>(sql_get_total);
-        const total: number = +result[0].total
-        return {
-            success: true,
-            data: {
-                books: books as TypeBook[],
-                offset: offset,
-                total: {
-                    amount: total,
+        const isNew: boolean = await checkBook(data.book_title);
+        if (isNew) {
+            const book: Book = new Book(data)
+            switch (version){
+                case 'v1': {
+                    return await insertIntoTableV1(book, formImg);
+                }
+                case 'v2': {
+                    return await insertIntoTableV2(book, formImg);
                 }
             }
         }
+        return buildFailedResult('This Book exist');
+
     } catch (err) {
-        return {
-            success: false,
-            msg: `${err}`
-        }
-
-    } finally {
-        await connection.end()
+        return getTextError(err);
     }
+}
 
+async function checkBook(title: string): Promise<boolean> {
+    const sql_compare_by_title: string = await handler_db.getSqlScript('compare_by_title.sql', version);
+    const [result] = await handler_db.execute(sql_compare_by_title, [title]) as RowDataPacket[][];
+    return result.length === 0;
 }
 
 
-export async function addNewBook(req: Request){
-    const data: TypeFormData = req.body;
-    const formImg: TypeFormImage = <TypeFormImage>req.files;
-    const connection: Connection = await mysql.createConnection(JSON.parse(config));
+
+async function saveImage(pathToImages: string, fileName: number, formImage: Express.Multer.File): Promise<void>{
     try {
-        const isNew: boolean = await checkBook(connection, data.book_title);
-
-        if (isNew){
-            const book: Book = new Book(data)
-            const insert_new_book: string = await fs.readFile(`${path_to_sql_scripts}/fill_table.sql`, "utf-8");
-            const [result]: [ResultSetHeader, FieldPacket[]] =  await connection.execute<ResultSetHeader>(insert_new_book, book.getBookInfo())
-            if (formImg) await saveImage(path_to_images, result.insertId, formImg.book_img[0])
-            return {
-                success: true,
-                data: result
-            }
-        } else {
-            return {
-                success: false,
-                msg: "This Book exist"
-            }
-        }
-    } catch (err) {
-        return {
-            success: false,
-            msg: `${err}`
-        }
-    } finally {
-        await connection.end()
-    }
-}
-
-async function checkBook(connection: Connection, title: string): Promise<boolean> {
-    try {
-        const compare_by_title: string = await fs.readFile(
-            `${path_to_sql_scripts}/compare_by_title.sql`,
-            'utf-8'
-        );
-        const [result] = await connection.execute<RowDataPacket[]>(compare_by_title, [title]);
-        return result.length === 0;
-    } catch (err){
-        return false;
-    }
-}
-
-class Book {
-    isnb: string;
-    title: string;
-    author1: string;
-    author2: string;
-    author3: string;
-    description: string;
-    year: number;
-    pages: number;
-    stars: number;
-    date: string;
-    clicks: number;
-    views: number;
-    event: boolean;
-
-    constructor(data: TypeData) {
-        this.isnb = data.book_isbn || null;
-        this.title = data.book_title;
-        this.author1 = data.book_author1;
-        this.author2 = data.book_author2 || null;
-        this.author3 = data.book_author3 || null;
-        this.description = data.book_description;
-        this.year = data.book_year;
-        this.pages = data.book_pages || null;
-        this.stars = data.book_pages || null;
-        this.date = new Date(Date.now()).toISOString().slice(0, 19).replace("T", " ");
-        this.clicks = 0;
-        this.views = 0;
-        this.event = false;
-    }
-
-    getBookInfo(): (string | number | null | boolean)[] {
-        return [
-            this.isnb,
-            this.title,
-            this.author1,
-            this.description,
-            this.year,
-            this.pages,
-            this.stars,
-            this.date,
-            this.clicks,
-            this.views,
-            this.event
-        ]
-    }
-}
-
-async function saveImage(pathToImage: string, fileName: number, formImage: Express.Multer.File){
-    try {
-        await fs.writeFile(`${pathToImage + fileName}.jpg`, formImage.buffer)
+        await fs.writeFile(`${pathToImages + fileName}.jpg`, formImage.buffer)
     } catch (err) {
         throw new Error(`${err}`)
     }
+}
+
+
+function buildSuccessfulResult(books?: TypeBook[], total?: number, offset?: string): TypeResultSuccess {
+    if (!books) return {success: true}
+    return {
+        success: true,
+        data: {
+            books: books as TypeBook[],
+            offset: offset,
+            total: {
+                amount: total,
+            }
+        }
+    }
+}
+
+function buildFailedResult(msg: string): TypeResultError{
+    return {
+        success: true,
+        msg: msg
+    }
+}
+
+async function insertIntoTableV1(book: Book, formImg: TypeFormImage): Promise<TypeResult>{
+    try {
+        const sql_insert_new_book: string = await handler_db.getSqlScript('insert_new_book.sql', version);
+        const [result] =
+            await handler_db.execute(sql_insert_new_book, book.getBookInfo()) as ResultSetHeader[];
+        if (formImg) await saveImage(path_to_images, result.insertId, formImg.book_img[0]);
+        return buildSuccessfulResult()
+    } catch (err) {
+        if (err instanceof Error) throw new Error(err.message);
+        throw new Error('Unknown error');
+    }
+}
+
+async function insertIntoTableV2(book: Book, formImg: TypeFormImage): Promise<TypeResult> {
+    try {
+        const sql_insert_into_books_authors_table: string =
+            await handler_db.getSqlScript('insert_into_books_authors_table.sql', version);
+        const sql_insert_into_books_table: string =
+            await handler_db.getSqlScript('insert_into_books_table.sql', version);
+
+        const authors: string[] = book.getAuthors().split(', ');
+        const bookInfo = book.getBookInfo();
+        bookInfo.splice(2, 1)
+
+        const [result] = await handler_db.execute(
+            sql_insert_into_books_table,
+            bookInfo
+        ) as ResultSetHeader[];
+
+        const authors_id: number[] = await getAuthorsId(authors);
+        const book_id: number = result.insertId;
+
+        for (const author_id of authors_id){
+            await handler_db.execute(
+                sql_insert_into_books_authors_table,
+                [book_id, author_id]
+            );
+        }
+
+        if (formImg) await saveImage(path_to_images, book_id, formImg.book_img[0]);
+        return buildSuccessfulResult();
+    } catch (err) {
+        if (err instanceof Error) throw new Error(err.message);
+        throw new Error('Unknown error');
+    }
+}
+
+async function getAuthorsId(authors: string[]){
+    const authors_id: number[] = []
+
+    try {
+        const sql_compare_authors_name: string =
+            await handler_db.getSqlScript('compare_authors_name.sql', version);
+        const sql_insert_into_authors_table: string =
+            await handler_db.getSqlScript('insert_into_authors_table.sql', version);
+
+        for (const author of authors){
+            const [result] =
+                await handler_db.execute(sql_compare_authors_name, [author]) as RowDataPacket[][];
+
+            if (result.length) {
+                authors_id.push(result[0].author_id);
+                continue;
+            }
+
+            const [headers] =
+                await handler_db.execute(sql_insert_into_authors_table, [ author.trim() ]) as ResultSetHeader[];
+
+            authors_id.push(headers.insertId);
+        }
+
+        return authors_id
+    } catch (err) {
+        throw new Error("Can't get authors id");
+    }
+}
+
+async function getVersion(): Promise<string | undefined> {
+    const migration_name: string | undefined = await handler_db.getCurrentMigration();
+    if (migration_name) {
+        const start: number = migration_name.lastIndexOf('-') + 1;
+        return migration_name.substring(start);
+    }
+    return migration_name;
+}
+
+function getTextError(err: any): TypeResultError{
+    if (err instanceof Error) {
+        console.log(err.message);
+        return buildFailedResult(err.message);
+    }
+    return buildFailedResult('Unknown error');
 }
