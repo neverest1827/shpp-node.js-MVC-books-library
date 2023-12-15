@@ -1,6 +1,6 @@
 import { DataBase } from "./data_base.js";
 import fs from "fs/promises";
-import * as dgram from "dgram";
+
 interface Migration {
     up(): Promise<void>;
     down(): Promise<void>;
@@ -95,11 +95,12 @@ export class Migrate {
 
     async setCurrentMigrationName(name: string | undefined) {
         this.currentMigrationName = name;
-        if (!name) return await fs.unlink('./migrate_log.json');
+        const path_to_file: string = './dist/migrate_log.json'
+        if (!name) return await fs.unlink(path_to_file);
 
         try {
             const content: object = {'name': this.currentMigrationName}
-            await fs.writeFile('./migrate_log.json', JSON.stringify(content));
+            await fs.writeFile(path_to_file, JSON.stringify(content));
         } catch (err) {
             console.log(err);
         }
@@ -161,23 +162,28 @@ export class Migrate {
 
             for (const file of migrationFiles) {
                 const key: string = file.substring(0, file.length - 3)
-                const filePath: string = path + file;
-                const { default: migrationObject } = await import (`../${filePath}`);
-
-                if (
-                    typeof migrationObject === "object" &&
-                    typeof migrationObject.up === "function" &&
-                    typeof migrationObject.down === "function"
-                ) {
-                    migrations[key] = migrationObject;
-                } else {
-                    console.warn(`Пропускается недопустимый файл миграции: ${filePath}`);
+                const filePath: string = `${path}/${file}`;
+                try {
+                    const fileUrl: URL = new URL(`file://${filePath}`);
+                    const { default: migrationObject } = await import(fileUrl.href);
+                    if (typeof migrationObject === "object" &&
+                        typeof migrationObject.up === "function" &&
+                        typeof migrationObject.down === "function") {
+                        migrations[key] = migrationObject;
+                    } else {
+                        console.warn(`Пропускается недопустимый файл миграции: ${filePath}`);
+                    }
+                } catch (importError) {
+                    if (importError instanceof Error) {
+                        console.error(`Ошибка при импорте файла миграции ${filePath}:`, importError.message);
+                    }
                 }
             }
-
             return migrations;
         } catch (err) {
-            console.error("Ошибка при чтении файлов миграции:", err);
+            if(err instanceof Error){
+                console.error("Ошибка при чтении файлов миграции:", err.message);
+            }
             return {};
         }
     }
