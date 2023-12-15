@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import path from "path";
 import {user_router} from "./routes/user_router.js";
 import {admin_router} from "./routes/admin_router.js";
+import {tasks} from "./cron.js";
 
 const __filename: string = fileURLToPath(import.meta.url);
 const __dirname: string = path.dirname(__filename);
@@ -18,6 +19,10 @@ app.use(admin_router)
 
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, './views'));
+
+for (const task of tasks){
+    task.start();
+}
 
 app.listen(port, () => {
     console.log(`Server listen the port ${port}`)
