@@ -19,6 +19,7 @@ window.addEventListener('load', function (){
         paginationOnClick = initPagination(default_offset, default_limit, firstItem);
         paginationItems.forEach( item => item.addEventListener('click', paginationOnClick));
         setActivePagLink(firstItem);
+        addListenerForDeleteBtn()
     })();
 
 
@@ -132,6 +133,30 @@ window.addEventListener('load', function (){
             fetch(`/admin/api/v1/?${params}`)
                 .then(res => res.json())
                 .then(result => fillTableRows(result))
+                .then(() => addListenerForDeleteBtn())
+
         }
+    }
+
+    async function deleteBook(e) {
+        e.preventDefault();
+        const btn = e.target;
+        const closestTr = btn.closest("tr");
+        const id = closestTr.querySelector('.book_id').textContent;
+
+        const response = await fetch(`/admin/api/v1/?delete=${id}`, {
+            method: 'PUT'
+        });
+        const result = await response.json()
+        if (result.success){
+            window.location.href = '/admin'
+        } else {
+
+        }
+    }
+
+    function addListenerForDeleteBtn(){
+        const deleteButtons = document.querySelectorAll('.delete');
+        deleteButtons.forEach( btn => btn.addEventListener('click', deleteBook))
     }
 })
