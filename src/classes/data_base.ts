@@ -4,22 +4,30 @@ import fast_csv from "fast-csv";
 import {TypeData} from "types";
 import path from "path";
 import { fileURLToPath } from 'url';
+import mysqldump from "mysqldump";
+
+type TypeConfig = {
+    host: string,
+    user: string,
+    password: string,
+    database: string
+}
 
 export class DataBase {
     private static instance: DataBase | null = null;
-    config: object
+    config: TypeConfig
     path_to_work_dir: string
     path_to_sql_scripts: string
     sql_scripts: {[key: string]: string}
 
-    constructor(config: object, path_to_work_dir: string) {
+    constructor(config: TypeConfig, path_to_work_dir: string) {
         this.config = config;
         this.path_to_work_dir = path_to_work_dir;
         this.path_to_sql_scripts = path_to_work_dir + 'dist/sql/';
         this.sql_scripts = {};
     }
 
-    static async getInstance(): Promise<DataBase> {
+    static async getInstance(): Promise<DataBase> {  //TODO убрать, везде заменить на тот что в классе миграций
         if (!DataBase.instance) {
             const path_to_file: string = path.dirname(fileURLToPath(import.meta.url));
             const path_to_work_dir: string = path_to_file.substring(0, path_to_file.indexOf('dist'));
@@ -71,7 +79,7 @@ export class DataBase {
 
     async parseCsv(): Promise<TypeData[]> {
         try {
-            const data: string = await fs.readFile('data.csv', "utf-8");
+            const data: string = await fs.readFile('dist/data.csv', "utf-8");
 
             return await new Promise((resolve, reject) => {
                 const parsedData: TypeData[] = [];
@@ -115,5 +123,35 @@ export class DataBase {
         } catch (err) {
             return undefined;
         }
+    }
+
+    async getDeletedBooks(){
+        const current_migration_name: string | undefined = await this.getCurrentMigration();
+        let version: string = '';
+        if (current_migration_name){
+            version = current_migration_name.substring(current_migration_name.lastIndexOf('-') + 1);
+        }
+        try {
+            const sql_check_deleted_books: string = await this.getSqlScript('find_deleted_books.sql', version);
+            const [books] = await this.execute(sql_check_deleted_books) as RowDataPacket[][]
+            if (books.length){
+                return books
+            }
+            return []
+        } catch (err) {
+            console.log(err);
+            return []
+        }
+    }
+
+    async createBackup(){
+        const path_to_dir: string = path.join(this.path_to_work_dir, 'dist', 'backup')
+        const path_to_file: string = path.join(path_to_dir, `${Date.now()}_dump.sql`, );
+
+        await fs.mkdir(path_to_dir, {recursive: true});
+        await mysqldump({
+            connection: this.config,
+            dumpToFile: path_to_file
+        });
     }
 }
