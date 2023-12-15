@@ -33,3 +33,4 @@ const logoutMiddleware = function (){
 admin_router.get('/admin', loginMiddleware, AdminController.getAdminPage)
 admin_router.get('/admin/api/v1/', AdminController.getBooksInfo)
 admin_router.post('/admin/api/v1/', handleForm, AdminController.addNewBook)
+admin_router.put('/admin/api/v1/', AdminController.deleteBook)

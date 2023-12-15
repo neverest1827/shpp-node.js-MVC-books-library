@@ -4,6 +4,7 @@ import {TypeBook, TypeFormData, TypeFormImage, TypeResult, TypeResultError, Type
 import {DataBase} from "../classes/data_base.js";
 import {Book} from "../classes/book.js";
 import {Request} from "express";
+import path from "path";
 
 
 const path_to_images: string = './static/books-images/';
@@ -182,4 +183,15 @@ function getTextError(err: any): TypeResultError{
         return buildFailedResult(err.message);
     }
     return buildFailedResult('Unknown error');
+}
+
+export async function deleteBook(id: string): Promise<TypeResult> {
+    try {
+        await fs.unlink(path.join(path_to_images, id));
+        const sql_update_delete_time = await handler_db.getSqlScript('update_delete_time.sql', version);
+        const [headers] = await handler_db.execute(sql_update_delete_time, [id]);
+        return buildSuccessfulResult()
+    } catch (err){
+        return  buildFailedResult('Err')
+    }
 }
