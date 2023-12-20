@@ -1,40 +1,163 @@
-import { DataBase } from "./data_base.js";
+import {Error, Extension, Method, MIGRATE_PATHS, TARGET_DIR} from "../configs/migrate_config.js";
+import {DISTRIBUTION_FOLDER} from "../configs/global_config.js";
 import fs from "fs/promises";
+import path from "path";
 
-interface Migration {
-    up(): Promise<void>;
-    down(): Promise<void>;
-}
-
+/**
+ * A class that contains methods for creating and managing migration files
+ */
 export class Migrate {
     private static instance: Migrate | null = null;
-    data_base: DataBase;
-    migrations: { [key: string] : Migration }
-    path_to_migrations: string;
-    currentMigrationName: string | undefined;
+    private readonly _path_to_migrations_folder: string;
+    private readonly _path_to_log_file: string;
+    private readonly _migrations: Migrations;
+    private _current_migration_name: string | undefined;
 
-    constructor(dataBase: DataBase, path_to_migrations: string, migrations: { [key: string] : Migration }, currentMigrationName: string | undefined) {
-        this.data_base = dataBase;
-        this.path_to_migrations = path_to_migrations;
-        this.migrations = migrations;
-        this.currentMigrationName = currentMigrationName;
+    constructor(migrations: Migrations, currentMigrationName: string | undefined) {
+        this._path_to_migrations_folder = MIGRATE_PATHS.PATH_TO_MIGRATIONS_FOLDER;
+        this._path_to_log_file = MIGRATE_PATHS.PATH_TO_LOG_FILE;
+        this._current_migration_name = currentMigrationName;
+        this._migrations = migrations;
     }
 
-    static async getInstance(dataBase: DataBase, path_to_migrations: string): Promise<Migrate> {
+    static async getInstance(): Promise<Migrate> {
         if (!Migrate.instance) {
-            const migrations: { [key: string] : Migration } = await this.getMigrations(path_to_migrations);
-            const currentMigrationName: string | undefined = await this.getCurrentMigrationName();
-            Migrate.instance = new Migrate(dataBase, path_to_migrations, migrations, currentMigrationName);
+            const migrations: Migrations = await this.getMigrations();
+            const current_migration_name: string | undefined = await this.getCurrentMigrationName();
+            Migrate.instance = new Migrate(migrations, current_migration_name);
         }
         return Migrate.instance;
     }
 
-    async create(args: string[]){
-        const name: string = args[1];
-        const id: number = Date.now()
-        const filePath: string = `${this.path_to_migrations}/${id}-${name}.js`;
+    /**
+     * Reads the log file and returns the name of the migration that was performed
+     *
+     * @private
+     */
+    private static async getCurrentMigrationName(): Promise<string | undefined> {
+        try {
+            const file_content: string = await fs.readFile(MIGRATE_PATHS.PATH_TO_LOG_FILE, 'utf-8');
+            const data = JSON.parse(file_content);
+            return data.name;
+        } catch (err) {
+            return undefined;
+        }
+    }
 
-        const content: string = `export default {
+    /**
+     * Finds the current version of the migration from the current migration name
+     */
+    static async getCurrentMigrationVersion(): Promise<string | undefined> {
+        const migrationName: string | undefined = await Migrate.getCurrentMigrationName();
+        if (migrationName) return migrationName.substring(migrationName.lastIndexOf('-') + 1);
+        return undefined;
+    }
+
+    /**
+     * Reads migration files from the specified folder, imports them, and validates each migration object.
+     * Returns an object containing valid migrations with their corresponding keys.
+     *
+     * @private
+     */
+    private static async getMigrations(): Promise<Migrations> {
+        try {
+            const files: string[] = await fs.readdir(MIGRATE_PATHS.PATH_TO_MIGRATIONS_FOLDER);
+            const migration_files: string[] = files.filter( (file: string) => file.endsWith(Extension.JS) );
+
+            const migrations: Migrations = {};
+
+            for (const file of migration_files) {
+                const migrations_key: string = file.split('.')[0]; // reject the expansion
+                const path_to_migration_file: string = path.join(MIGRATE_PATHS.PATH_TO_MIGRATIONS_FOLDER, file);
+                try {
+                    const migration_object: MigrationObject = await Migrate.getMigrationObject(path_to_migration_file);
+                    if ( Migrate.isValidMigrationObject(migration_object) ) {
+                        migrations[migrations_key] = migration_object;
+                    } else {
+                        console.warn(`An invalid migration file is skipped: ${path_to_migration_file}`);
+                    }
+                } catch (err) {
+                    console.error(`Error when importing migration file ${path_to_migration_file}: ${err}`);
+                }
+            }
+
+            return migrations;
+
+        } catch (err) {
+            console.error(`Error reading migration files: ${err}`);
+            return {};
+        }
+    }
+
+    /**
+     * Gets a migration object from a specified file using dynamic importing
+     *
+     * @param path_to_migration_file - Path to migration file.
+     * @private
+     */
+    private static async getMigrationObject(path_to_migration_file: string): Promise<MigrationObject> {
+        const fileUrl: URL = new URL(`file://${path_to_migration_file}`);
+        const {default: migrationObject} = await import(fileUrl.href);
+        return migrationObject;
+    }
+
+    /**
+     * Checks whether the passed migration object is valid.
+     * A valid migration object must be an object containing the 'up' and 'down' functions.
+     *
+     * @param migrationObject - Migration object to be checked
+     * @private
+     */
+    private static isValidMigrationObject(migrationObject: MigrationObject): boolean {
+        return (
+            typeof migrationObject === "object" &&
+            typeof migrationObject.up === "function" &&
+            typeof migrationObject.down === "function"
+        );
+    }
+
+    /**
+     * Creates a new migration file in the specified directory.
+     *
+     * @param args - An array of string arguments. The second argument is used as the migration name.
+     */
+    async create(args: string[]): Promise<void> {
+        try {
+            const migration_name: string | undefined = args[1];
+            if (!migration_name) return console.error(Error.NOT_VALID);
+
+            const migration_file_name: string = this.generateMigrationFileName(migration_name);
+            const path_to_file: string = path.join(this._path_to_migrations_folder, migration_file_name);
+
+            const content: string = this.generateMigrationContent();
+
+            await fs.writeFile(path_to_file, content);
+            console.log(`The ${migration_file_name} file was created in ${this._path_to_migrations_folder}`);
+
+        } catch (err) {
+            console.error(`Error creating a file: ${err}`);
+        }
+
+    }
+
+    /**
+     * Creates a unique file name by specifying the extension
+     *
+     * @param migrationName - User-defined migration name
+     * @private
+     */
+    private generateMigrationFileName(migrationName: string): string {
+        const id: number = Date.now();
+        const file_extension: string = TARGET_DIR === DISTRIBUTION_FOLDER ? Extension.JS : Extension.TS;
+        return `${id}-${migrationName + file_extension}`;
+    }
+
+    /**
+     * Returns the starting template that will be in the created migration file
+     */
+    generateMigrationContent(): string {
+        return `
+export default {
     async up(){
         /** some code */
     },
@@ -43,159 +166,195 @@ export class Migrate {
         /** some code */
     }
 }`
-
-        try {
-            await fs.writeFile(filePath, content);
-            console.log(`Файл ${id}-${name}.js успешно создан в директории ${this.path_to_migrations}`);
-        } catch (error) {
-            console.error('Ошибка при создании файла:', error);
-        }
-
     }
 
-    async up(args: string[]){
-        const targetMigrationName: string = args[1];
-        const keys: string[] = Object.keys(this.migrations);
-        const targetMigrationPosition: number = keys.indexOf(targetMigrationName);
+    /**
+     * The method validates the specified migration name, calculates the required number of migrations to be performed,
+     * and runs the corresponding method on the migration object
+     *
+     * @param args - Arguments passed when starting the migration.
+     * The second element args (args[1]) contains the target name of the migration.
+     */
+    async up(args: string[]): Promise<void> {
+        const target_migration_name: string | undefined = args[1];
 
-        if (targetMigrationPosition !== 0) {
-            const currentMigrationPosition: number = keys.indexOf(this.currentMigrationName!)
+        if ( this.isInvalidMigrationName(target_migration_name) ) return console.error(Error.NOT_VALID);
 
-            if (currentMigrationPosition < targetMigrationPosition) {
+        await this.performUpMigrations(target_migration_name);
+        await this.setCurrentMigrationName(target_migration_name);
+    }
 
-                for (let index: number = currentMigrationPosition + 1; index <= targetMigrationPosition; index++) {
-                    await this.startMigration(keys[index], 'up');
-                }
+    /**
+     * The method validates the specified migration name, calculates the required number of migrations to be performed,
+     * and runs the corresponding method on the migration object
+     *
+     * @param args Arguments passed when starting the migration.
+     * The second element args (args[1]) contains the target name of the migration.
+     */
+    async down(args: string[]): Promise<void> {
+        const target_migration_name: string | undefined = args[1];
 
+        if (this.isInvalidMigrationName(target_migration_name)) return console.error(Error.NOT_VALID);
+        if (!this._current_migration_name) return console.error(Error.NOT_COMPLETED);
+
+        const migration_keys: string[] = Object.keys(this._migrations);
+        const target_migration_position: number = migration_keys.indexOf(target_migration_name);
+
+        await this.performDownMigrations(migration_keys, target_migration_position);
+
+        const new_current_migration_name: string | undefined = migration_keys[target_migration_position - 1];
+        await this.setCurrentMigrationName(new_current_migration_name);
+    }
+
+    /**
+     * Checks whether the migration file name was passed and whether the specified name is in the migration array
+     *
+     * @param migrationName - The migration name to be checked
+     * @private
+     */
+    private isInvalidMigrationName(migrationName: string | undefined): boolean {
+        return !(migrationName && Object.keys(this._migrations).includes(migrationName));
+    }
+
+    /**
+     * Performs a sequence of upward migrations to the specified target name
+     *
+     * @param targetMigrationName - Migration target name to which upward migration will be performed
+     * @private
+     */
+    private async performUpMigrations(targetMigrationName: string): Promise<void> {
+        const migration_keys: string[] = Object.keys(this._migrations);
+        const target_migration_position: number = migration_keys.indexOf(targetMigrationName);
+
+        if (!this._current_migration_name && target_migration_position === 0) {
+            await this.startMigration(targetMigrationName, Method.UP);
+        } else {
+            const current_migration_position: number = migration_keys.indexOf(this._current_migration_name!);
+
+            if (current_migration_position < target_migration_position) {
+                await this.executeMigrations(
+                    current_migration_position + 1, //Because the current migration has already been completed
+                    target_migration_position,
+                    migration_keys,
+                    Method.UP
+                );
             } else {
-                console.log('Incorrect operation! Target migration must been bigger then current migration.')
-                return
+                return console.error(Error.TARGET_NOT_BIGGER);
             }
+        }
+    }
 
+    /**
+     * Performs a sequence of downward migrations to the specified target name
+     *
+     * @param migrationKeys - Migration key array
+     * @param targetMigrationPosition - Position of the target migration in the key array
+     * @private
+     */
+    private async performDownMigrations(migrationKeys: string[], targetMigrationPosition: number): Promise<void> {
+        const current_migration_position: number = migrationKeys.indexOf(this._current_migration_name!);
+
+        if (current_migration_position >= targetMigrationPosition) {
+            await this.executeMigrations(
+                current_migration_position,
+                targetMigrationPosition,
+                migrationKeys,
+                Method.DOWN
+            );
         } else {
-            if (this.currentMigrationName) {
-                console.log('Incorrect operation! Target migration must been bigger then current migration.')
-                return
-            }
-            await this.startMigration(targetMigrationName, 'up');
-        }
-
-        await this.setCurrentMigrationName(targetMigrationName);
-    }
-
-    static async getCurrentMigrationName(): Promise<string | undefined>{
-        try {
-            const result: string = await fs.readFile('migrate_log.json', 'utf-8');
-            const data = JSON.parse(result);
-            return data.name;
-        } catch (err){
-            return undefined
+            console.log(Error.CURRENT_NOT_BIGGER);
+            return;
         }
     }
 
-    async setCurrentMigrationName(name: string | undefined) {
-        this.currentMigrationName = name;
-        const path_to_file: string = './dist/migrate_log.json'
-        if (!name) return await fs.unlink(path_to_file);
+    /**
+     * Executes a sequence of migrations in a specified direction
+     *
+     * @param startIndex - Initial position in the migration key array
+     * @param endIndex - Final position in the array of migration keys
+     * @param migrationKeys - Migration key array
+     * @param methodName - Name of the method to be invoked in the migration object
+     * @private
+     */
+    private async executeMigrations(
+        startIndex: number, endIndex: number, migrationKeys: string[], methodName: MigrationMethods
+    ): Promise<void> {
 
-        try {
-            const content: object = {'name': this.currentMigrationName}
-            await fs.writeFile(path_to_file, JSON.stringify(content));
-        } catch (err) {
-            console.log(err);
+        const step: number = methodName === Method.UP ? 1 : -1;
+
+        for (let index: number = startIndex; this.shouldContinue(index, endIndex, methodName); index += step) {
+            await this.startMigration(migrationKeys[index], methodName);
         }
     }
 
-    async down(args: string[]){
-        let targetMigrationName: string | undefined = args[1];
-        const keys: string[] = Object.keys(this.migrations);
-        const targetMigrationPosition: number = keys.indexOf(targetMigrationName);
-
-        if (this.currentMigrationName) {
-            const currentMigrationPosition: number = keys.indexOf(this.currentMigrationName);
-
-            if (currentMigrationPosition >= targetMigrationPosition) {
-
-                for (let index: number = currentMigrationPosition; index >= targetMigrationPosition; index--) {
-                    await this.startMigration(keys[index], 'down');
-                }
-
-            } else {
-                console.log('Incorrect operation! Target migration must been smaller then current migration.')
-                return
-            }
-
-        } else {
-            console.log('Incorrect operation! Not a single migration has been completed.')
-        }
-
-        if(
-            targetMigrationName && this.currentMigrationName &&
-            !targetMigrationName.localeCompare(this.currentMigrationName)
-        ) {
-            await this.setCurrentMigrationName(keys[targetMigrationPosition - 1]);
-        } else {
-            targetMigrationName =
-                targetMigrationPosition === 0 ? undefined : targetMigrationName;
-            await this.setCurrentMigrationName(targetMigrationName);
-        }
+    /**
+     * Checks the condition for the continuation of the migration cycle execution
+     *
+     * @param index - Current position in the migration key array
+     * @param endIndex - Final position in the array of migration keys
+     * @param methodName - Name of the method to be invoked in the migration object
+     */
+    shouldContinue(index: number, endIndex: number, methodName: MigrationMethods): boolean {
+        return methodName === Method.UP ? index <= endIndex : index >= endIndex
     }
 
-    async startMigration(migrationName: string, methodName: 'up' | 'down'){
+    /**
+     * Calls the specified method on the migration object and outputs information about its execution status to
+     * the console
+     *
+     * @param migrationName - Name of the method to be invoked in the migration object
+     * @param methodName - Name of the method to be invoked in the migration object
+     */
+    async startMigration(migrationName: string, methodName: MigrationMethods) {
         const start: number = migrationName.indexOf('-') + 1;
         process.stdout.write(`${methodName} ${migrationName.substring(start)}: `);
         try {
-            await this.migrations[migrationName][methodName]();
+            await this._migrations[migrationName][methodName]();
             console.log('Done')
-        } catch (err){
-            console.log('Fail')
+        } catch (err) {
             console.error(err);
         }
     }
 
-    static async getMigrations(path: string): Promise<{ [key: string] : Migration }> {
+
+    /**
+     * Method for setting the current migration name and writing this name to the log
+     *
+     * @param newCurrentMigrationName - New name of the current migration or undefined if no migration is present
+     */
+    async setCurrentMigrationName(newCurrentMigrationName: string | undefined): Promise<void> {
+        this._current_migration_name = newCurrentMigrationName;
+        if (!newCurrentMigrationName) { // If undefined, it was the very first migration and the log should be erased
+            await fs.unlink(this._path_to_log_file);
+            return;
+        }
+        await this.createLog();
+    }
+
+    /**
+     * Logs the current migration name to the log file
+     * @private
+     */
+    private async createLog() {
         try {
-            const files: string[] = await fs.readdir(path);
-            const migrationFiles: string[] = files.filter((file) => file.endsWith(".js"));
-
-            const migrations: { [key: string] : Migration } = {};
-
-            for (const file of migrationFiles) {
-                const key: string = file.substring(0, file.length - 3)
-                const filePath: string = `${path}/${file}`;
-                try {
-                    const fileUrl: URL = new URL(`file://${filePath}`);
-                    const { default: migrationObject } = await import(fileUrl.href);
-                    if (typeof migrationObject === "object" &&
-                        typeof migrationObject.up === "function" &&
-                        typeof migrationObject.down === "function") {
-                        migrations[key] = migrationObject;
-                    } else {
-                        console.warn(`Пропускается недопустимый файл миграции: ${filePath}`);
-                    }
-                } catch (importError) {
-                    if (importError instanceof Error) {
-                        console.error(`Ошибка при импорте файла миграции ${filePath}:`, importError.message);
-                    }
-                }
-            }
-            return migrations;
+            const content: object = {'name': this._current_migration_name}
+            await fs.writeFile(this._path_to_log_file, JSON.stringify(content));
         } catch (err) {
-            if(err instanceof Error){
-                console.error("Ошибка при чтении файлов миграции:", err.message);
-            }
-            return {};
+            console.error(`Error creating logs ${err}`);
         }
     }
 
+    /**
+     * Method to output a list of available migrations, marking the current migration if it is defined
+     */
     async ls(): Promise<void> {
-        const migration_names: string[] = Object.keys(this.migrations);
-        if (migration_names.length > 0){
+        const migration_names: string[] = Object.keys(this._migrations);
+        if (migration_names.length > 0) {
             console.log('Migration list:')
             migration_names.map(migrationName => {
                 if (
-                    typeof this.currentMigrationName == 'string' &&
-                    !Boolean(migrationName.localeCompare(this.currentMigrationName))
+                    typeof this._current_migration_name == 'string' &&
+                    !Boolean(migrationName.localeCompare(this._current_migration_name))
                 ) {
                     console.log(` - ${migrationName} <CURRENT`)
                 } else {
