@@ -92,11 +92,11 @@ export class Migrate {
     /**
      * Gets a migration object from a specified file using dynamic importing
      *
-     * @param path_to_migration_file - Path to migration file.
+     * @param pathToMigrationFile - Path to migration file.
      * @private
      */
-    private static async getMigrationObject(path_to_migration_file: string): Promise<MigrationObject> {
-        const fileUrl: URL = new URL(`file://${path_to_migration_file}`);
+    private static async getMigrationObject(pathToMigrationFile: string): Promise<MigrationObject> {
+        const fileUrl: URL = new URL(`file://${pathToMigrationFile}`);
         const {default: migrationObject} = await import(fileUrl.href);
         return migrationObject;
     }

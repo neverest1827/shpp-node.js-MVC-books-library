@@ -1,5 +1,5 @@
 import mysql, {Connection} from "mysql2/promise";
-import {handler_db_paths} from "../configs/handler_db_config.js";
+import {HANDLER_DB_PATHS} from "../configs/handler_db_config.js";
 import {getTextError} from "../functions.js";
 import mysqldump from "mysqldump";
 import fast_csv from "fast-csv";
@@ -20,16 +20,16 @@ export class HandlerDB {
     private readonly _config: Config;
 
     constructor(config: Config) {
-        this._path_to_sql_scripts = handler_db_paths.PATH_TO_SQL_SCRIPTS;
-        this._path_to_backups = handler_db_paths.PATH_TO_BACKUP_FOLDER;
-        this._path_to_start_data = handler_db_paths.PATH_TO_START_DATA;
+        this._path_to_sql_scripts = HANDLER_DB_PATHS.PATH_TO_SQL_SCRIPTS;
+        this._path_to_backups = HANDLER_DB_PATHS.PATH_TO_BACKUP_FOLDER;
+        this._path_to_start_data = HANDLER_DB_PATHS.PATH_TO_START_DATA;
         this._config = config;
         this._sql_script_cache = {};
     }
 
     static async getInstance(): Promise<HandlerDB> {
         if (!HandlerDB.instance) {
-            const config: string = await fs.readFile(handler_db_paths.PATH_TO_CONFIG, 'utf-8');
+            const config: string = await fs.readFile(HANDLER_DB_PATHS.PATH_TO_CONFIG, 'utf-8');
             HandlerDB.instance = new HandlerDB( JSON.parse(config) );
         }
         return HandlerDB.instance;

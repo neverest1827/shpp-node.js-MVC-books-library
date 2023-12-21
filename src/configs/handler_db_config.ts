@@ -7,7 +7,7 @@ const config_folder: string = 'configs';
 const backup_folder: string = 'backup';
 const sql_folder: string = 'sql';
 
-export const handler_db_paths: HandlerDbPaths = {
+export const HANDLER_DB_PATHS: HandlerDbPaths = {
     PATH_TO_BACKUP_FOLDER: path.join(PATH_TO_WORK_DIR, DISTRIBUTION_FOLDER, backup_folder),
     PATH_TO_SQL_SCRIPTS: path.join(PATH_TO_WORK_DIR, DISTRIBUTION_FOLDER, sql_folder),
     PATH_TO_START_DATA: path.join(PATH_TO_WORK_DIR, DISTRIBUTION_FOLDER, start_data_file_name),
