@@ -30,11 +30,12 @@ export async function getBooksInfo(query: QueryFilter): Promise<Result>{
                 'get_books_for_admin_page.sql',
                 version
             );
-            const [books] = await handler_db.execute(
+            let [books] = await handler_db.execute(
                 sql_get_books_for_admin_page,
                 [limit, offset]
             ) as TBook[][];
 
+            books = security_manager.shieldData(books);
             return buildSuccessfulResult(books, totalRowsCount, offset);
         }
         return buildFailedResult(AppError.BAD_REQUEST);

@@ -27,11 +27,12 @@ export async function getFilteredBooksInfo(queryObj: QueryFilter): Promise<Resul
                 `get_books_filter_${filter}.sql`,
                 version
             );
-            const [books] = await handler_db.execute(
+            let [books] = await handler_db.execute(
                 sql_get_filtered_books,
                 [limit, offset]
             ) as TBook[][];
 
+            books = security_manager.shieldData(books);
             return buildSuccessfulResult(books, totalRowsCount, offset, filter);
         }
         return buildFailedResult(AppError.BAD_REQUEST);
@@ -54,10 +55,12 @@ export async function search(query: QuerySearch): Promise<Result> {
     const searchText: string = `%${query.search}%`;
     try {
         const sql_search: string = await handler_db.getSqlScript('search.sql', version);
-        const [books] = await handler_db.execute(
+        let [books] = await handler_db.execute(
             sql_search,
             [searchText, searchText, searchText]
         ) as TBook[][]
+
+        books = security_manager.shieldData(books);
         return buildSuccessfulResult(books, books.length);
 
     } catch (err) {
@@ -77,7 +80,9 @@ export async function search(query: QuerySearch): Promise<Result> {
 export async function getBookInfo(book_id: string): Promise<Result> {
     try {
         const sql_get_book_by_id: string = await handler_db.getSqlScript('get_book_by_id.sql', version);
-        const [books] = await handler_db.execute(sql_get_book_by_id, [book_id]) as TBook[][];
+        let [books] = await handler_db.execute(sql_get_book_by_id, [book_id]) as TBook[][];
+
+        books = security_manager.shieldData(books);
         return buildSuccessfulResult(books[0]);
 
     } catch (err) {
