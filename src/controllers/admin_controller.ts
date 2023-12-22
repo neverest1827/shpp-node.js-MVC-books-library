@@ -1,37 +1,49 @@
-import {Request, Response} from "express";
+import {AppError} from "../configs/app_config.js";
 import * as Admin from '../models/admin.js';
-import { TypeQueryFilter, TypeResult } from "types";
+import {Request, Response} from "express";
+import fs from "fs/promises";
 
-export function getAdminPage(req: Request, res: Response){
-    res.render('admin-page.ejs')
-}
-
-export async function getBooksInfo(req: Request, res: Response) {
-    const query: TypeQueryFilter = req.query as TypeQueryFilter;
-    const result: TypeResult = await Admin.getBooksInfo(query.offset, query.limit);
-    if (result.success){
-        res.status(200).send(result)
-    } else {
-        res.status(500).send(result)
+export async function getAdminPage(req: Request, res: Response): Promise<void> {
+    try {
+        await fs.access('views/books-page.ejs');
+        res.status(200).render('admin-page.ejs');
+    } catch (err) {
+        res.status(404).render('404.ejs');
     }
 }
 
-export async function addNewBook(req: Request, res: Response) { //TODO переробити щоб було звуження типів (щось з типами)
-    const result: TypeResult = await Admin.addNewBook(req);
-    if (result.success){
-        res.status(200).redirect('/admin');
-    } else {
-        res.status(400).send({"Error": "err"})
+export async function getBooksInfo(req: Request, res: Response): Promise<void> {
+    try {
+        const result: Result = await Admin.getBooksInfo(req.query as QueryFilter);
+        if (result.success){
+            res.status(200).send(result);
+        } else {
+            res.status(400).json({error: result.msg});
+        }
+    } catch (err) {
+        res.status(500).json({error: AppError.INTERNAL_ERROR});
     }
 }
 
-export async function deleteBook(req: Request, res: Response){
+export async function addNewBook(req: Request, res: Response): Promise<void> {
+    try {
+        const result: Result = await Admin.addNewBook(<FormImage>req.files, req.body);
+        if (result.success){
+            res.status(200).redirect('/admin');
+        } else {
+            res.status(400).json({error: result.msg})
+        }
+    } catch (err){
+        res.status(500).json({error: AppError.INTERNAL_ERROR})
+    }
+}
+
+export async function deleteBook(req: Request, res: Response): Promise<void>{
     const id: string = req.query.delete as string;
-    const result: TypeResult = await Admin.deleteBook(id);
+    const result: Result = await Admin.deleteBook(id);
     if (result.success) {
         res.status(200).send(result);
-    }
-    else {
-        res.status(400).send({ "Error": "err" });
+    } else {
+        res.status(400).json({error: result.msg});
     }
 }
