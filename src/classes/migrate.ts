@@ -1,4 +1,4 @@
-import {Error, Extension, Method, MIGRATE_PATHS, TARGET_DIR} from "../configs/migrate_config.js";
+import {MigrateError, Extension, Method, MIGRATE_PATHS, TARGET_DIR} from "../configs/migrate_config.js";
 import {DISTRIBUTION_FOLDER} from "../configs/global_config.js";
 import fs from "fs/promises";
 import path from "path";
@@ -124,7 +124,7 @@ export class Migrate {
     async create(args: string[]): Promise<void> {
         try {
             const migration_name: string | undefined = args[1];
-            if (!migration_name) return console.error(Error.NOT_VALID);
+            if (!migration_name) return console.error(MigrateError.NOT_VALID);
 
             const migration_file_name: string = this.generateMigrationFileName(migration_name);
             const path_to_file: string = path.join(this._path_to_migrations_folder, migration_file_name);
@@ -178,7 +178,7 @@ export default {
     async up(args: string[]): Promise<void> {
         const target_migration_name: string | undefined = args[1];
 
-        if ( this.isInvalidMigrationName(target_migration_name) ) return console.error(Error.NOT_VALID);
+        if ( this.isInvalidMigrationName(target_migration_name) ) return console.error(MigrateError.NOT_VALID);
 
         await this.performUpMigrations(target_migration_name);
         await this.setCurrentMigrationName(target_migration_name);
@@ -194,8 +194,8 @@ export default {
     async down(args: string[]): Promise<void> {
         const target_migration_name: string | undefined = args[1];
 
-        if (this.isInvalidMigrationName(target_migration_name)) return console.error(Error.NOT_VALID);
-        if (!this._current_migration_name) return console.error(Error.NOT_COMPLETED);
+        if (this.isInvalidMigrationName(target_migration_name)) return console.error(MigrateError.NOT_VALID);
+        if (!this._current_migration_name) return console.error(MigrateError.NOT_COMPLETED);
 
         const migration_keys: string[] = Object.keys(this._migrations);
         const target_migration_position: number = migration_keys.indexOf(target_migration_name);
@@ -239,7 +239,7 @@ export default {
                     Method.UP
                 );
             } else {
-                return console.error(Error.TARGET_NOT_BIGGER);
+                return console.error(MigrateError.TARGET_NOT_BIGGER);
             }
         }
     }
@@ -262,7 +262,7 @@ export default {
                 Method.DOWN
             );
         } else {
-            console.log(Error.CURRENT_NOT_BIGGER);
+            console.log(MigrateError.CURRENT_NOT_BIGGER);
             return;
         }
     }

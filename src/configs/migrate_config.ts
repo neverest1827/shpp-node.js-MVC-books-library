@@ -12,8 +12,7 @@ export const MIGRATE_PATHS: MigratePaths = {
     PATH_TO_LOG_FILE: path.join(PATH_TO_WORK_DIR, DISTRIBUTION_FOLDER, log_file_name)
 }
 
-
-export enum Error {
+export enum MigrateError {
     NOT_VALID = "The name of the migration was not specified or incorrect",
     NOT_COMPLETED = "Not a single migration has been completed. In order to perform a downgrade, you need to have " +
 "some kind of migration file executed",
