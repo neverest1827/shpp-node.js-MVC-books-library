@@ -9,14 +9,13 @@ $(document).ready(function () {
 
     (function () {
         data = {
-            filter: getParameterByName('filter') || "new",
-            offset: getParameterByName('offset'),
+            filter: getParameterByName('filter') || global.filter,
+            offset: getParameterByName('offset') || 0,
             limit: getParameterByName('count') || global.items_limit_on_page_load
         };
 
         setSidebarActiveButton(null, data.filter);
         doAjaxQuery('GET', '/api/v1/books', data, function (res) {
-            console.log('qindex');
             view.addBooksItems(res.data.books, true);
             // drawItemsOnScroll = initDrawItemsOnScroll(res.data.total.amount);
             drawItemsOnClick = initDrawItemsOnClick(res.data.total.amount);
@@ -107,8 +106,6 @@ var initDrawItemsOnClick = function (maxItems) {
         };
         $("#loading").slideDown();
         doAjaxQuery('GET', '/api/v1/books', data, function (res) {
-            $("#loading").slideUp();
-            isScrollRunning = false;
             if (boolean) {
                 view.addBooksItems(res.data.books, false);
             } else {
