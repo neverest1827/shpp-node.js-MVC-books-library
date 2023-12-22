@@ -1,75 +1,73 @@
 import { Request, Response } from "express";
-import {TypeQueryFilter, TypeQuerySearch, TypeResult} from "types";
 import * as User from "../models/user.js";
+import {AppError} from "../configs/app_config";
+import fs from "fs/promises";
 
-export async function getIndex(req: Request, res: Response): Promise<void>{
+export async function getIndexPage(req: Request, res: Response): Promise<void>{
     try {
+        await fs.access('views/books-page.ejs');
         res.status(200).render('books-page.ejs')
     } catch (err) {
-        res.status(404).send({
-            "success": false,
-            "msg": "file not found"
-        });
+        res.status(404).render('404.ejs');
     }
 }
 
 export async function getFilteredBooks(req: Request, res: Response): Promise<void> {
-    const {filter, limit, offset} = req.query as TypeQueryFilter;
-    const result: TypeResult = await User.getBooks(filter, limit, offset);
-    if (result.success) {
-        res.status(200).send(result);
-    } else {
-        res.status(500).send(result);
-    }
-}
-
-export async function search(req: Request, res: Response) {
-    const query: TypeQuerySearch = req.query as TypeQuerySearch
-    const result: TypeResult = await User.search(query.search);
-    if (result.success) {
-        res.status(200).send(result);
-    } else {
-        res.status(500).send(result);
-    }
-}
-
-export async function getBook(req: Request, res: Response) {
-    const result: TypeResult = await User.getBook(req.params.book_id);
-    if (result.success) {
-        res.status(200).send(result);
-    } else {
-        res.status(500).send(result);
-    }
-}
-
-export async function getBookPage(req: Request, res: Response){
-    const id = +req.params.book_id
-    if (id) await User.updateViewsPage(req.params.book_id);   //TODO виправити костиль, викликається 3 рази
     try {
-        res.status(200).render('book-page.ejs')
+        const result: Result = await User.getFilteredBooksInfo(req.query as QueryFilter);
+        if (result.success) {
+            res.status(200).send(result);
+        } else {
+            res.status(400).json({error: result.msg});
+        }
     } catch (err) {
-        res.status(404).send({
-            "success": false,
-            "msg": "file not found"
-        });
+        res.status(500).json({error: AppError.INTERNAL_ERROR})
     }
 }
 
-export async function updateBookStatistics(req: Request, res: Response){
-    const id: string = req.query.update as string
-    const result: TypeResult = await User.updateBookStatistics(id);
+export async function getFoundBooks(req: Request, res: Response): Promise<void> {
+    const result: Result = await User.search(req.query as QuerySearch);
     if (result.success) {
         res.status(200).send(result);
     } else {
-        res.status(500).send(result);
+        res.status(500).json({error: AppError.INTERNAL_ERROR});
     }
 }
 
-export async function getSearchPage(req: Request, res: Response){
-    const query: TypeQuerySearch = req.query as TypeQuerySearch
+export async function getBookInfo(req: Request, res: Response): Promise<void> {
+    const result: Result = await User.getBookInfo(req.params.book_id);
+    if (result.success) {
+        res.status(200).send(result);
+    } else {
+        res.status(500).json({error: AppError.INTERNAL_ERROR});
+    }
+}
+
+export async function getBookPage(req: Request, res: Response): Promise<void> {
+    const result: Result = await User.getBookPage(req.params.book_id)
+    if (result.success){
+        res.status(200).render('book-page.ejs');
+    } else {
+        res.status(404).render('404.ejs');
+    }
+}
+
+export async function updateBookClicks(req: Request, res: Response): Promise<void> {
+    const id: string = req.query.update as string
+    const result: Result = await User.updateBookClicks(id);
+    if (result.success) {
+        res.status(200).send(result);
+    } else {
+        res.status(500).json({error: AppError.INTERNAL_ERROR});
+    }
+}
+
+export async function getSearchPage(req: Request, res: Response): Promise<void> {
+    const query: QuerySearch = req.query as QuerySearch;
     try {
+        await fs.access('views/search-page.ejs');
         res.render('search-page.ejs', {query})
     } catch (err){
-        res.status(404).send({"Error": "Page not found"});
+        res.status(404).render('404.ejs');
     }
 }
