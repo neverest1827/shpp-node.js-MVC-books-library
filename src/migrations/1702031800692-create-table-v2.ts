@@ -5,7 +5,7 @@ const path_to_class: string = "../classes/handler_db.js" || "./handler_db.js"
 const { HandlerDB } = await import(path_to_class);
 
 export default {
-    async up(){
+    async up(): Promise<void> {
         const version: string = 'v2'
         const handler_db = await HandlerDB.getInstance();
         const tableNames: string[] = ['authors', 'books', 'books_authors'];
@@ -30,7 +30,7 @@ export default {
 
             const [books] = await handler_db.execute(
                 sql_get_all_info.replace(/{tableName}/, 'library')
-            ) as RowDataPacket[][];
+            ) as TBook[][];
 
             for (const book of books) {
 
@@ -109,7 +109,7 @@ export default {
         }
     },
             
-    async down(){
+    async down(): Promise<void > {
         const current_version: string = 'v2';
         const prev_version: string = 'v1';
         const handler_db = await HandlerDB.getInstance();
@@ -132,7 +132,7 @@ export default {
 
             const [books] = await handler_db.execute(
                 sql_script_get_all_info_from_books_authors
-            ) as RowDataPacket[][]
+            ) as TBook[][]
 
             for (const book of books){
                 await handler_db.execute(sql_insert_new_book, [
