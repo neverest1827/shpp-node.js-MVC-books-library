@@ -1,15 +1,11 @@
-import {DataBase} from "../classes/data_base.js";
+import {HandlerDB} from "../classes/handler_db.js";
 
-export async function databaseBackup(){
+export async function databaseBackup(): Promise<void> {
     try {
-        const handler_db: DataBase = await DataBase.getInstance()
+        const handler_db: HandlerDB = await HandlerDB.getInstance()
         await handler_db.createBackup();
-        console.log('Backup created')
+        console.log('Backup created');
     } catch (err){
-        if (err instanceof Error){
-            console.log(err.message);
-        } else {
-            console.log('unknown')
-        }
+        console.error(`Error creating a backup: ${err}`);
     }
 }
