@@ -14,7 +14,8 @@
     "migrator": "node dist/migrator.js",
     "m-ls": "npm run migrator -- ls",
     "m-up": "npm run migrator -- up",
-    "m-down": "npm run migrator -- down"
+    "m-down": "npm run migrator -- down",
+    "m-create": "npm run migrator -- create"
   },
   "author": "Vitalii Fetisov",
   "license": "ISC",

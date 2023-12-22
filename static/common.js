@@ -266,6 +266,6 @@ function htmlspecialchars(html) {
     html = html.replace(/</g, "&lt;");
     html = html.replace(/>/g, "&gt;");
     html = html.replace(/"/g, "&quot;");
+    html = html.replace(/'/g, "&apos;");
     return html;
-
 }
