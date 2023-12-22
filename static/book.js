@@ -4,11 +4,11 @@ var isBookInUse = false;
 var bookId;
 var id = pathname.substr(bookIdPosition)
 
-doAjaxQuery('GET', '/api/v1/books/' + id, null, function(res) {
+doAjaxQuery('GET', '/api/v1/books/' + id, null, function (res) {
     view.fillBookInfo(res.data);
     if (res.data.event) {
-            isBookInUse = true;
-            bookId = res.data.id;
+        isBookInUse = true;
+        bookId = res.data.id;
     }
 });
 
@@ -50,7 +50,7 @@ doAjaxQuery('GET', '/api/v1/books/' + id, null, function(res) {
 //     }
 // });
 /*------------------ Sending email by clicking on the button ----------------*/
-$('.btnBookID').click(function(event) {
+$('.btnBookID').click(function (event) {
     // var email = $('.orderEmail').val();
     // var isEmail = controller.validateEmail(email);
     // if (isEmail) {
@@ -67,12 +67,18 @@ $('.btnBookID').click(function(event) {
     //         " появится в библиотеке", bookId);
     // } else
     // {
-        doAjaxQuery('GET', '/api/v1/books/?update=' + pathname.substr(bookIdPosition), null, function(res) {
-            view.showSuccess("Книга свободна и ты можешь прийти за ней." +
-                " Наш адрес: г. Кропивницкий, переулок Васильевский 10, 5 этаж." +
-                " Лучше предварительно прозвонить и предупредить нас, чтоб " +
-                " не попасть в неловкую ситуацию. Тел. 099 196 24 69"
-            );
+
+    view.showSuccess("Книга свободна и ты можешь прийти за ней." +
+        " Наш адрес: г. Кропивницкий, переулок Васильевский 10, 5 этаж." +
+        " Лучше предварительно прозвонить и предупредить нас, чтоб " +
+        " не попасть в неловкую ситуацию. Тел. 099 196 24 69"
+    );
+    doAjaxQuery(
+        'PUT',
+        '/api/v1/books/?update=' + pathname.substr(bookIdPosition),
+        null,
+        function (res) {
+            if (!res.success) view.showError(res.msg);
         });
     // }
 });
