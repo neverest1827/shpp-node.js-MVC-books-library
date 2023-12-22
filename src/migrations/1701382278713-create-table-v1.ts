@@ -1,24 +1,27 @@
-import {TypeData} from "types";
+import {RowDataPacket} from "mysql2/promise";
+import fs from "fs/promises";
 
-const path_to_class: string = "../classes/data_base.js" || "./data_base.js"
-const { DataBase } = await import(path_to_class);
-// import {DataBase} from "../classes/data_base";
+// Crutch to avoid getting a wrong path error Т_Т
+const path_to_class: string = "../classes/handler_db.js" || "./handler_db.js"
+const { HandlerDB } = await import(path_to_class);
 export default {
 
     async up(): Promise<void>{
         const version: string = 'v1';
+        const handler_db = await HandlerDB.getInstance();
+
         try {
-            const handlerDb = await DataBase.getInstance();
-            const sql_script: string = await handlerDb.getSqlScript('create_table.sql', version);
-            const sql_fill_script = await handlerDb.getSqlScript('insert_new_book.sql', version);
-            await handlerDb.execute(sql_script);
+            const sql_script: string = await handler_db.getSqlScript('create_table.sql', version);
+            const sql_insert_new_book: string = await handler_db.getSqlScript('insert_into_books_table.sql', version);
+            await handler_db.execute(sql_script);
 
-            const books = await handlerDb.parseCsv()
+            const path_to_start_data = handler_db.getPathToStartData();
+            const startData: string = await fs.readFile(path_to_start_data, "utf-8");
+            const books: TBook[] = await handler_db.parseCsv(startData)
 
-            for(const key of Object.keys(books)){
-                const book = books[key];
-                const date = book.date ? book.date : new Date(Date.now()).toDateString();
-                await handlerDb.execute(sql_fill_script, [
+            for(const book of books){
+                const date: string = book.date ? book.date : new Date(Date.now()).toDateString();
+                await handler_db.execute(sql_insert_new_book, [
                     book.isbn ? book.isbn : null,
                     book.title,
                     book.author,
@@ -26,26 +29,39 @@ export default {
                     book.year,
                     book.pages ? book.pages : null,
                     book.stars ? book.stars : null,
-                    date.slice(0, 19).replace("T", " "),
+                    date.substring(0, 19).replace('T', ' '),
                     book.clicks ? book.clicks : null,
                     book.views ? book.views : null,
-                    !!book.event,
+                    book.event,
                     book.delete_time ? book.delete_time : null
                 ]);
             }
         } catch (err) {
             throw new Error(`${err}`);
+        } finally {
+            await handler_db.closeConnection();
         }
     },
 
     async down(): Promise<void>{
+        const handler_db = await HandlerDB.getInstance();
+
         try {
-            const handlerDb = await DataBase.getInstance();
-            const sql_script: string = await handlerDb.getSqlScript('drop_table.sql');
-            await handlerDb.exportToCsv('library');
-            await handlerDb.execute(sql_script.replace(/{tableName}/, 'library'));
+            const sql_drop_table: string = await handler_db.getSqlScript('drop_table.sql');
+            const sql_get_all_info_from_table: string = await handler_db.getSqlScript(
+                'get_all_info_from_table.sql'
+            );
+
+            const [books] = await handler_db.execute(
+                sql_get_all_info_from_table.replace(/{tableName}/, 'library')
+            ) as RowDataPacket[][];
+
+            await handler_db.createCsvData(books as TBook[])
+            await handler_db.execute(sql_drop_table.replace(/{tableName}/, 'library'));
         } catch (err){
             throw new Error(`${err}`);
+        } finally {
+            await handler_db.closeConnection();
         }
     }
 }
