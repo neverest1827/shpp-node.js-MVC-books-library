@@ -1,43 +1,47 @@
-export type TypeBook = {
-    [key: string]: string | number;
-}
+type TBook = {
+    [key: string]: string | number | boolean | null;
+    id: number,
+    isbn: string | null,
+    title: string,
+    author: string,
+    description: string,
+    year: string,
+    pages: number | null,
+    stars: number | null,
+    date: string,
+    clicks: number,
+    views: number,
+    event: boolean
+    delete_time: string | null
+} & DbResult
 
-
-type TypeQueryFilter = {
+type QueryFilter = {
     filter: string;
     offset: string;
     limit: string;
 }
 
-type TypeQuerySearch = {
+type QuerySearch = {
     search: string
 }
 
-export type TypeQuery = TypeQueryFilter | TypeQuerySearch
-
-type TypeData = {
-    [key: string] : TypeBook[] | TypeTotal | string | number
+type Data = {
+    [key: string] : TBook[] | TypeTotal | string | number
 }
 
-type TypeResultSuccess = {
-    success: boolean,
-    data?: TypeData | TypeBook
+type ResultSuccess = {
+    success: true,
+    data?: Data | TBook
 }
 
-type TypeResultError = {
-    success: boolean,
+type ResultError = {
+    success: false,
     msg: string
 }
 
-export type TypeResult = TypeResultSuccess | TypeResultError;
+type Result = ResultSuccess | ResultError;
 
-type TypeDatabaseResult = OkPacket | RowDataPacket[] | ResultSetHeader[] | RowDataPacket[][] | OkPacket[] | ProcedureCallPacket;
-
-export type TypeTotal = {
-    total: number
-} & TypeDatabaseResult;
-
-type TypeFormData = {
+type TFormData = {
     book_title: string;
     book_year: string;
     book_author1: string;
@@ -46,6 +50,12 @@ type TypeFormData = {
     book_description: string;
 }
 
-type TypeFormImage = { book_img: Express.Multer.File[] } | undefined
+type FormImage = { book_img: Express.Multer.File[] } | undefined
+
+type AppPaths = {
+    PATH_TO_STATIC_FOLDER: string,
+    PATH_TO_VIEWS_FOLDER: string,
+    PATH_TO_IMAGES: string
+}
 
 
