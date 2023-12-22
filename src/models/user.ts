@@ -1,8 +1,8 @@
-import {getTextError, getTotalBooksCount} from "../functions.js";
+import {getTextError, getTotalRowsCount, buildSuccessfulResult, buildFailedResult} from "../functions.js";
 import {SecurityManager} from "../classes/security_manager.js";
 import {HandlerDB} from "../classes/handler_db.js";
+import {AppError} from "../configs/app_config.js";
 import {Migrate} from "../classes/migrate.js";
-import {AppError} from "../configs/app_config";
 
 const handler_db: HandlerDB = await HandlerDB.getInstance();
 const security_manager: SecurityManager = SecurityManager.getInstance();
@@ -14,10 +14,9 @@ const version: string | undefined = await Migrate.getCurrentMigrationVersion()
  * @param queryObj - An object containing filter criteria, offset, and limit for pagination
  */
 export async function getFilteredBooksInfo(queryObj: QueryFilter): Promise<Result> {
-    const {filter, offset, limit} = queryObj;
-
     try {
-        const totalRowsCount: number = await getTotalBooksCount(version);
+        const {filter, offset, limit} = queryObj;
+        const totalRowsCount: number = await getTotalRowsCount(version);
 
         const isValidOffset: boolean = security_manager.checkOutOfRange(offset, totalRowsCount);
         const isValidLimit: boolean = security_manager.checkOutOfRange(limit, totalRowsCount);
@@ -97,7 +96,7 @@ export async function getBookInfo(book_id: string): Promise<Result> {
  */
 export async function updateBookClicks(book_id: string): Promise<Result> {
     try {
-        const totalRowsCount: number = await getTotalBooksCount(version);
+        const totalRowsCount: number = await getTotalRowsCount(version);
         const isValidId: boolean = security_manager.validateBookId(book_id, totalRowsCount);
         if (isValidId) {
             const sql_update_book_statistics_by_id: string = await handler_db.getSqlScript(
@@ -122,7 +121,7 @@ export async function updateBookClicks(book_id: string): Promise<Result> {
  */
 export async function getBookPage(book_id: string): Promise<Result> {
     try {
-        const total_rows_count: number = await getTotalBooksCount(version);
+        const total_rows_count: number = await getTotalRowsCount(version);
         const is_valid_id: boolean = security_manager.validateBookId(book_id, total_rows_count);
         if (is_valid_id) {
             const sql_update_book_views_by_id: string = await handler_db.getSqlScript(
@@ -136,51 +135,5 @@ export async function getBookPage(book_id: string): Promise<Result> {
     } catch (err) {
         console.error(`Error received book: ${err}`);
         return buildFailedResult( getTextError(err) );
-    }
-
-}
-
-/**
- * Builds a successful result object based on the provided data, total count, offset, and filter.
- *
- * @param data - The data to include in the result (can be a single book or an array of books).
- * @param total - The total count of books (optional).
- * @param offset - The pagination offset (optional).
- * @param filter - The filter criteria used for the result (optional).
- */
-function buildSuccessfulResult(
-    data?: TBook[] | TBook, total?: number, offset?: string, filter?: string
-): ResultSuccess {
-    if (!data) return {success: true}
-
-    if (!total && !offset) {
-        return {
-            success: true,
-            data: data
-        }
-    }
-
-    return {
-        success: true,
-        data: {
-            books: data,
-            filter: filter,
-            offset: offset,
-            total: {
-                amount: total,
-            }
-        }
-    }
-}
-
-/**
- * Builds a failed result object with the provided error message.
- *
- * @param message - The error message to include in the result.
- */
-function buildFailedResult(message: string): ResultError {
-    return {
-        success: false,
-        msg: message
     }
 }

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as User from "../models/user.js";
-import {AppError} from "../configs/app_config";
+import {AppError} from "../configs/app_config.js";
 import fs from "fs/promises";
 
 export async function getIndexPage(req: Request, res: Response): Promise<void>{
