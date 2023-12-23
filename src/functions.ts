@@ -22,28 +22,27 @@ export async function getTotalRowsCount(version: string | undefined): Promise<nu
  * @param filter - The filter criteria used for the result (optional).
  */
 export function buildSuccessfulResult(
-    data?: TBook[] | TBook, total?: number, offset?: string, filter?: string
+    data?: TBook[] | TBook, total?: number, offset?: number, filter?: string
 ): ResultSuccess {
 
-    if (!data) return {success: true}
+    if(data && total || total === 0) {
+        return {
+            success: true,
+            data: {
+                books: data,
+                filter: filter,
+                offset: offset,
+                total: {
+                    amount: total,
+                }
+            }
+        };
 
-    if (!total && !offset) {
+    } else {
         return {
             success: true,
             data: data
-        }
-    }
-
-    return {
-        success: true,
-        data: {
-            books: data,
-            filter: filter,
-            offset: offset,
-            total: {
-                amount: total,
-            }
-        }
+        };
     }
 }
 
