@@ -197,7 +197,7 @@ window.addEventListener('load', function (){
         const inputValue = this.value;
         const yearPattern = /^\d{4}$/;
         if (!yearPattern.test(inputValue)) {
-            view.showError('Год должен быть в формате "yyyy"')
+            view.showError('Рік має бути в форматі "yyyy"')
         }
     });
 })
