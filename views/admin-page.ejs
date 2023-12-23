@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ-панель</title>
-    <link rel="stylesheet" href="/admin-panel/style/reset.css">
+    <link rel="stylesheet" href="/libs.min.css">
+    <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="/admin-panel/style/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css"
+          crossorigin="anonymous"/>
 </head>
 <body>
 
-<header class="bg-dark text-white">
+<header class="header-wrapper bg-dark text-white">
     <div class="container">
         <div class="row">
             <div class="col-md-6"><h2>Бібліотека++</h2></div>
@@ -29,7 +32,9 @@
                 <script class="pattern" type="text/template">
                     <tr>
                         <td class="book_id">{id}</td>
-                        <td>{title}</td>
+                        <td>
+                            <a href="/books/{id}">{title}</a>
+                        </td>
                         <td>{author}</td>
                         <td>{year}</td>
                         <td>{date}</td>
@@ -62,7 +67,7 @@
             </div>
         </div>
         <!-- Второй блок -->
-        <div class="admin-panel__form row mt-5">
+        <div class="admin-panel__form row mt-5 mb-5">
             <div class="col-md-12">
                 <h2>Додати нову книгу</h2>
                 <form action="/admin/api/v1" method="post" enctype="multipart/form-data">
@@ -72,8 +77,9 @@
                             <input type="text" class="form-control mb-3" id="bookYear" name="book_year" placeholder="Рік видання" required>
                             <div class="custom-file">
                                 <input id="customFile" class="custom-file-input" name="book_img" type="file" required >
-                                <label class="custom-file-label" for="customFile">Виберіть зображеня</label>
+                                <label class="custom-file-label" for="customFile" id="fileNameDisplay">Виберіть зображення</label>
                             </div>
+                            <div id="imagePreview" class="ml-3"></div>
                         </div>
                         <div class="form-group">
                             <input type="text" class="form-control mb-3" name="book_author1" placeholder="Автор1" required>
@@ -81,7 +87,6 @@
                             <input type="text" class="form-control mb-3" name="book_author3" placeholder="Автор3">
                             <textarea class="textarea form-control" name="book_description"></textarea>
                         </div>
-                        <div id="imagePreview" class="ml-3"></div>
                     </div>
                     <!-- Добавьте еще инпуты по аналогии -->
                     <button type="submit" class="btn btn-success">Додати</button>
@@ -90,6 +95,7 @@
         </div>
     </div>
 </section>
+<%- include('./partials/footer.ejs') %>
 <script src="../libs.min.js"></script>
 <script src="../common.js"></script>
 <script src="../admin-panel/index.js"></script>
