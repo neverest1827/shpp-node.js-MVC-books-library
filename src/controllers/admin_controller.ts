@@ -29,7 +29,7 @@ export async function addNewBook(req: Request, res: Response): Promise<void> {
     try {
         const result: Result = await Admin.addNewBook(<FormImage>req.files, req.body);
         if (result.success){
-            res.status(200).redirect('/admin');
+            res.status(200).send(result);
         } else {
             res.status(400).json({error: result.msg})
         }
@@ -39,7 +39,7 @@ export async function addNewBook(req: Request, res: Response): Promise<void> {
 }
 
 export async function deleteBook(req: Request, res: Response): Promise<void>{
-    const id: string = req.query.delete as string;
+    const id: string = req.params.bookId;
     const result: Result = await Admin.deleteBook(id);
     if (result.success) {
         res.status(200).send(result);

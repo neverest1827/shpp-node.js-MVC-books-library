@@ -36,7 +36,7 @@ export async function getBooksInfo(query: QueryFilter): Promise<Result>{
             ) as TBook[][];
 
             books = security_manager.shieldData(books);
-            return buildSuccessfulResult(books, totalRowsCount, offset);
+            return buildSuccessfulResult(books, totalRowsCount, +offset);
         }
         return buildFailedResult(AppError.BAD_REQUEST);
 

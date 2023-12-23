@@ -36,4 +36,4 @@ const loginMiddleware = expressBasicAuth({
 admin_router.get('/admin', loginMiddleware, AdminController.getAdminPage)
 admin_router.post('/admin/api/v1/', formMiddleware, AdminController.addNewBook)
 admin_router.get('/admin/api/v1/', AdminController.getBooksInfo)
-admin_router.put('/admin/api/v1/', AdminController.deleteBook)
+admin_router.get('/admin/api/v1/books/:bookId/remove', AdminController.deleteBook)
