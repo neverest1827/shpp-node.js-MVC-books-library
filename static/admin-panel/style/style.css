@@ -1,10 +1,28 @@
-.admin-panel__inner {
+body {
+    display: flex;
+    flex-direction: column;
+}
 
+.footer-wrapper, .header-wrapper {
+    flex-grow: 0;
+}
+
+.admin-panel {
+    flex-grow: 1;
+}
+
+.footer-wrapper {
+    position: relative;
 }
 
 .textarea.form-control{
-    height: 80px;
+    height: 150px;
     resize: none;
+}
+
+#imagePreview > img {
+    margin-top: 16px;
+    max-height: 150px;
 }
 
 th, td {
