@@ -14,14 +14,13 @@ window.addEventListener('load', function (){
         fillTableRows(result)
         createPagination(result.data.total.amount, default_limit)
 
-        const paginationItems = document.querySelectorAll('.page-link')
-        const firstItem = paginationItems.item(0)
+        const paginationItems = document.querySelectorAll('.page-link');
+        const firstItem = paginationItems.item(0);
         paginationOnClick = initPagination(default_offset, default_limit, firstItem);
         paginationItems.forEach( item => item.addEventListener('click', paginationOnClick));
         setActivePagLink(firstItem);
-        addListenerForDeleteBtn()
+        addListenerForDeleteBtn();
     })();
-
 
 
     document.querySelector('.logout').addEventListener('click', logout)
@@ -40,23 +39,31 @@ window.addEventListener('load', function (){
     function handleImageUpload() {
         const input = document.getElementById('customFile');
         const preview = document.getElementById('imagePreview');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
 
-        // Проверяем, выбран ли файл
         if (input.files && input.files[0]) {
-            const reader = new FileReader();
+            const fileName = input.files[0].name;
 
-            reader.onload = function(e) {
-                // Создаем элемент img для превью
-                const img = document.createElement('img');
-                img.src = e.target.result;
+            const validExtensions = '.jpg'
+            const fileExtension = fileName.slice(fileName.lastIndexOf('.'));
 
-                // Очищаем содержимое блока превью и добавляем новое изображение
-                preview.innerHTML = '';
-                preview.appendChild(img);
-            };
+            if(validExtensions.localeCompare(fileExtension.toLowerCase()) === 0){
+                const reader = new FileReader();
 
-            // Читаем файл как URL-адрес данных
-            reader.readAsDataURL(input.files[0]);
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+
+                    preview.innerHTML = '';
+                    preview.appendChild(img);
+
+                    fileNameDisplay.textContent = input.files[0].name;
+                };
+
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                view.showError('Можна використовувати лише зображеня з розниреням JPG')
+            }
         }
     }
     function fillTableRows(res){
@@ -144,19 +151,53 @@ window.addEventListener('load', function (){
         const closestTr = btn.closest("tr");
         const id = closestTr.querySelector('.book_id').textContent;
 
-        const response = await fetch(`/admin/api/v1/?delete=${id}`, {
-            method: 'PUT'
-        });
-        const result = await response.json()
-        if (result.success){
-            window.location.href = '/admin'
-        } else {
-
-        }
+        view.showConfirm(id);
     }
 
     function addListenerForDeleteBtn(){
         const deleteButtons = document.querySelectorAll('.delete');
         deleteButtons.forEach( btn => btn.addEventListener('click', deleteBook))
     }
+
+    document.querySelector('form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const textInputs = document.querySelectorAll('form input[type="text"]');
+        let isValid = true;
+
+        for (let textInput of textInputs){
+            if (textInput.value.length > 255) {
+                view.showError(`${textInput.placeholder} не може містити більше 255 символів`)
+                isValid = false;
+                break
+            }
+        }
+
+        const book_name = document.getElementById('bookTitle').value;
+        const form_data = new FormData(this);
+
+        if (isValid) {
+            const response = await fetch('/admin/api/v1', {
+                method: 'POST',
+                body: form_data
+            });
+            const result = await response.json();
+            if (result.success){
+                view.showSuccess(`Книга ${book_name} успішно створена!`);
+                document.querySelector('.confirm').addEventListener('click', () =>{
+                    window.location.href = '/admin';
+                })
+            } else {
+                view.showError(`Виникла помилка: ${result.msg}`);
+            }
+        }
+
+    });
+
+    document.getElementById('bookYear').addEventListener('blur',  function () {
+        const inputValue = this.value;
+        const yearPattern = /^\d{4}$/;
+        if (!yearPattern.test(inputValue)) {
+            view.showError('Год должен быть в формате "yyyy"')
+        }
+    });
 })
